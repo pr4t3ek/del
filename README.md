@@ -264,6 +264,27 @@ http://127.0.0.1:5000
 
 The application loads the saved artifacts at startup and never retrains, so pages are instant.
 
+### Serving on a local network
+
+To let others on the same network open it - a classroom, an office LAN:
+
+```bash
+pip install waitress          # sturdier than Flask's own server; used automatically
+python app.py --host 0.0.0.0
+```
+
+The startup banner prints the shareable `http://<your-ip>:5000` address. `--port` changes
+the port, and `DATACO_HOST` / `DATACO_PORT` work as environment variables. On Windows,
+allow the port through the firewall once (run PowerShell as Administrator):
+
+```powershell
+New-NetFirewallRule -DisplayName "DataCo Analytics" -Direction Inbound -LocalPort 5000 -Protocol TCP -Action Allow -Profile Private
+```
+
+**The application has no authentication.** Anyone who can reach the machine can open every
+page, download every export, and upload a replacement dataset. That is fine on a trusted
+network for a demo; do not expose it to the open internet.
+
 ## Tests
 
 ```bash

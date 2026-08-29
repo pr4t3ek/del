@@ -166,6 +166,11 @@ MULTIPLE_TESTING_METHOD = "fdr_bh"   # Benjamini-Hochberg
 # --------------------------------------------------------------------------------------
 SECRET_KEY = "dataco-supply-chain-analytics"
 MAX_CONTENT_LENGTH = 300 * 1024 * 1024   # 300 MB upload ceiling (dataset is ~96 MB)
+# 127.0.0.1 serves this machine only. To share the app across a local network use
+# 0.0.0.0 - either here, or without editing this file:
+#     python app.py --host 0.0.0.0
+# Note that the application has no authentication, so anyone who can reach the machine
+# can open every page and download every export.
 HOST = "127.0.0.1"
 PORT = 5000
 DEBUG = False

@@ -23,6 +23,57 @@
 </section>
 
 <section>
+  <h3>Why {{ s.n_tests }} factors, when the model uses {{ metadata.features|length }} features?</h3>
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>These are two different questions</h4>
+      <p>The {{ metadata.features|length }} model features are not
+      {{ metadata.features|length }} independent business factors. Several are different
+      encodings of the same underlying variable, and some cannot support a valid hypothesis
+      test at all:</p>
+      <ul class="clean" style="margin-top:10px">
+        <li><strong>Encodings of one variable.</strong> <span class="mono">month_sin</span> and
+        <span class="mono">month_cos</span> are a single factor &mdash; order month &mdash;
+        written as two columns. Testing them separately would count it twice.</li>
+        <li><strong>Components of a tested factor.</strong>
+        <span class="mono">Latitude</span> and <span class="mono">Longitude</span> feed
+        <span class="mono">distance_km</span>, which is tested. On their own they are
+        coordinates, not a business factor.</li>
+        <li><strong>Too sparse for the test to be valid.</strong>
+        <span class="mono">Order City</span> has 3,597 levels. A chi-square across them would
+        leave most cells in single digits and violate the test's assumptions, so destination
+        is tested at Market, Order Region and Order Country level instead.</li>
+        <li><strong>Multiple-testing cost.</strong> Every additional test raises the
+        correction threshold the whole family must clear, which would hide a genuine effect
+        rather than reveal one.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>The model still looked at all of them</h4>
+      <p>The hypothesis tests are not the only evidence. The feature ablation on the
+      <a href="{{ url_for('classification_page') }}">Classification</a> page feeds
+      <strong>every one of the {{ analytics.ablation.without_mode.n_features }} non-mode
+      features simultaneously</strong> &mdash; all the geography, all the calendar features,
+      distance, network load, order composition &mdash; into gradient boosting, including any
+      interaction between them.</p>
+      <div class="callout" style="margin-top:12px">
+        <p>It reaches
+        <strong>{{ '%.3f'|format(analytics.ablation.without_mode.metrics.roc_auc) }} AUC</strong>.
+        Chance is 0.500.</p>
+      </div>
+      <p style="margin-top:12px">So a model that saw all
+      {{ analytics.ablation.without_mode.n_features }} features together, and could exploit
+      any combination of them, found almost nothing. That covers the columns these
+      {{ s.n_tests }} tests do not individually reach.</p>
+      <p class="note" style="margin-top:10px">Every column in the original file is accounted
+      for in the predictor-availability table on the
+      <a href="{{ url_for('classification_page') }}">Classification</a> page &mdash; what was
+      used, what was not, and why.</p>
+    </div>
+  </div>
+</section>
+
+<section>
   <div class="callout">
     <p><strong>Method.</strong> {{ s.note }}</p>
     <p>Significance level &alpha; = {{ s.alpha }}. Because {{ s.n_tests }} tests are run on one

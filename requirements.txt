@@ -8,3 +8,8 @@ statsmodels>=0.14
 plotly>=5.20
 joblib>=1.3
 pytest>=8.0
+
+# Production-grade WSGI server, used automatically when present. Only needed if you
+# serve the app to other machines (python app.py --host 0.0.0.0); Flask's own server
+# is fine for a single user on localhost.
+waitress>=3.0

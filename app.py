@@ -15,6 +15,7 @@ scenario sliders) do arithmetic on small payloads or score a single constructed 
 from __future__ import annotations
 
 import json
+import os
 import traceback
 from pathlib import Path
 
@@ -732,10 +733,78 @@ def inject_globals():
     }
 
 
+def _lan_address() -> str | None:
+    """Best-effort local network address, for printing a shareable URL."""
+    import socket
+
+    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # No packet is actually sent; this just asks the OS which interface it
+        # would route through, which is the address other machines can reach.
+        probe.connect(("10.255.255.255", 1))
+        return probe.getsockname()[0]
+    except Exception:
+        return None
+    finally:
+        probe.close()
+
+
+def _parse_args():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="DataCo Supply Chain Delivery Analytics",
+        epilog="Serve on the local network with:  python app.py --host 0.0.0.0",
+    )
+    parser.add_argument(
+        "--host", default=os.environ.get("DATACO_HOST", config.HOST),
+        help="Interface to bind. 127.0.0.1 (default) is this machine only; "
+             "0.0.0.0 makes the app reachable from other machines on your network.",
+    )
+    parser.add_argument(
+        "--port", type=int, default=int(os.environ.get("DATACO_PORT", config.PORT)),
+        help=f"Port to listen on (default {config.PORT}).",
+    )
+    parser.add_argument(
+        "--dev", action="store_true",
+        help="Force Flask's development server even when waitress is installed.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = _parse_args()
+
     if not STORE.ready:
         print("\n" + "=" * 72)
         print(STORE.error or "Model artifacts not found.")
         print("=" * 72 + "\n")
-    print(f"Starting on http://{config.HOST}:{config.PORT}")
-    app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
+
+    shared = args.host not in ("127.0.0.1", "localhost")
+    print(f"\n  Local:   http://127.0.0.1:{args.port}")
+    if shared:
+        lan = _lan_address()
+        if lan:
+            print(f"  Network: http://{lan}:{args.port}")
+        else:
+            print(f"  Network: http://<this machine's IP>:{args.port}")
+        print("\n  Serving on all interfaces. Anyone who can reach this machine on the")
+        print("  network can open the application - there is no authentication.")
+    print()
+
+    # waitress is a production-grade WSGI server that runs cleanly on Windows. Flask's
+    # own server is single-threaded and explicitly not meant for shared use, so prefer
+    # waitress whenever it is installed.
+    server = None
+    if not args.dev:
+        try:
+            from waitress import serve as server
+        except ImportError:
+            if shared:
+                print("  Note: running Flask's development server. For a shared demo,")
+                print("        'pip install waitress' gives a sturdier one.\n")
+
+    if server is not None:
+        server(app, host=args.host, port=args.port, threads=8)
+    else:
+        app.run(host=args.host, port=args.port, debug=config.DEBUG)

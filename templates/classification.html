@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Classification &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set mc = analytics.model_comparison %}
+{% set ab = analytics.ablation %}
+{% set best = analytics.best_model %}
+{% set sp = analytics.split %}
+
+<div class="page-head">
+  <h2>Classification model</h2>
+  <p>Given information available at the moment the shipping-mode decision is made, what is the
+  probability that this order will be delivered late?</p>
+</div>
+
+<section>
+  <h3>Predictor availability and data leakage</h3>
+  <div class="callout warn">
+    <p><strong>Three columns in this dataset reconstruct the target almost perfectly, and all
+    three are excluded.</strong>
+    <span class="mono">Delivery Status</span> equals the target exactly on 100% of rows;
+    <span class="mono">Days for shipping (real)</span> compared against the promise reproduces
+    it on 97.6%; <span class="mono">shipping date (DateOrders)</span> recovers realised transit
+    when differenced against the order date. Including any of them produces the ~99% accuracy
+    commonly reported for this dataset &mdash; a number that scores the outcome against itself
+    rather than forecasting anything.</p>
+    <p>A fourth needs separate handling.
+    <span class="mono">Days for shipment (scheduled)</span> <em>is</em> known at decision time,
+    but it is a deterministic lookup on <span class="mono">Shipping Mode</span>
+    (Same Day&rarr;0, First Class&rarr;1, Second Class&rarr;2, Standard Class&rarr;4), so the
+    two are perfectly collinear. It is kept in the statistical model to demonstrate the
+    multicollinearity diagnostic and dropped from the ML feature set.</p>
+  </div>
+  <div class="card flush" style="margin-top:16px">
+    <div class="table-wrap scroll-y"><table class="compact">
+      <thead><tr><th>Variable</th><th>Available at decision time</th><th>Used in model</th><th>Reason</th></tr></thead>
+      <tbody>
+      {% for r in analytics.availability %}
+        <tr>
+          <td class="mono" style="font-size:12px">{{ r.variable }}</td>
+          <td>{% if r.available == 'No' %}<span class="badge bad">No</span>
+              {% elif r.available.startswith('Yes -') %}<span class="badge info">Decision variable</span>
+              {% else %}<span class="badge good">Yes</span>{% endif %}</td>
+          <td>{% if r.used == 'Yes' %}<span class="badge good">Yes</span>
+              {% elif r.used == 'Special handling' %}<span class="badge info">Special handling</span>
+              {% else %}<span class="badge mute">No</span>{% endif %}</td>
+          <td class="wrap" style="font-size:12.5px">{{ r.reason }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <h3>Train / test split</h3>
+  <div class="grid cols-4">
+    <div class="kpi"><div class="label">Training rows</div>
+      <div class="value">{{ '{:,}'.format(analytics.counts.n_train) }}</div>
+      <div class="sub">order line items</div></div>
+    <div class="kpi"><div class="label">Test rows</div>
+      <div class="value">{{ '{:,}'.format(analytics.counts.n_test) }}</div>
+      <div class="sub">held out entirely</div></div>
+    <div class="kpi"><div class="label">Predictors</div>
+      <div class="value">{{ metadata.features|length }}</div>
+      <div class="sub">after leakage screening</div></div>
+    <div class="kpi"><div class="label">Class balance</div>
+      <div class="value">{{ '%.1f'|format(100 * metadata.class_balance) }}%</div>
+      <div class="sub">late; near-balanced, no resampling</div></div>
+  </div>
+  <div class="callout" style="margin-top:16px">
+    <p><strong>Split strategy: {{ sp.strategy }}.</strong> {{ sp.description }}</p>
+    <p class="note">{{ '{:,}'.format(analytics.counts.n_cancelled_excluded) }} cancelled
+    shipments are excluded from modelling. They never shipped, yet carry
+    <span class="mono">Late_delivery_risk = 0</span>, which reads as "delivered on time" and is
+    not the same thing.</p>
+  </div>
+</section>
+
+<section>
+  <h3>Model comparison</h3>
+  <div class="card flush">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Model</th><th class="num">Accuracy</th><th class="num">Precision</th>
+        <th class="num">Recall</th><th class="num">F1</th><th class="num">ROC-AUC</th>
+        <th class="num">PR-AUC</th><th class="num">Brier</th><th class="num">CV AUC</th><th>Notes</th></tr></thead>
+      <tbody>
+      {% for name, m in mc.items() %}
+        <tr {% if name == best %}style="background:var(--accent-sf)"{% endif %}>
+          <td><strong>{{ name }}</strong>
+            {% if name == best %}<span class="badge info">Preferred</span>{% endif %}</td>
+          <td class="num">{{ '%.4f'|format(m.accuracy) }}</td>
+          <td class="num">{{ '%.4f'|format(m.precision) }}</td>
+          <td class="num">{{ '%.4f'|format(m.recall) }}</td>
+          <td class="num">{{ '%.4f'|format(m.f1) }}</td>
+          <td class="num"><strong>{{ '%.4f'|format(m.roc_auc) }}</strong></td>
+          <td class="num">{{ '%.4f'|format(m.pr_auc) }}</td>
+          <td class="num">{{ '%.4f'|format(m.brier) }}</td>
+          <td class="num">{% if m.cv_auc_mean %}{{ '%.4f'|format(m.cv_auc_mean) }}
+            <span class="note">&plusmn;{{ '%.3f'|format(m.cv_auc_std) }}</span>{% else %}&mdash;{% endif %}</td>
+          <td class="wrap" style="font-size:12px">{{ m.note }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  <div class="grid cols-2" style="margin-top:16px">
+    <div class="card">
+      <h4>Selection criterion</h4>
+      <p>{{ analytics.selection_criterion }}</p>
+      <p><strong>Why accuracy alone is insufficient here.</strong> The base rate is
+      {{ '%.1f'|format(100 * metadata.class_balance) }}% late, so a model that predicted
+      "late" for every order would score {{ '%.1f'|format(100 * metadata.class_balance) }}%
+      accuracy while being useless for deciding anything. Accuracy also hides which kind of
+      error the model makes, and the two are not equally costly &mdash; see the confusion
+      matrix on the <a href="{{ url_for('diagnostics_page') }}">diagnostics</a> page.</p>
+    </div>
+    <div class="card">
+      <h4>Model performance</h4>
+      <div id="c-compare" class="chart short"></div>
+      <p class="note">The four models land within 0.03 AUC of each other, and a depth-capped
+      decision tree is competitive with gradient boosting. That is itself informative: the
+      underlying relationship is close to a four-way lookup on shipping mode, so there is
+      little non-linear structure for a more flexible learner to exploit.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Feature ablation &mdash; and the leakage check</h3>
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>How much does each feature group contribute?</h4>
+      <div id="c-ablation" class="chart short"></div>
+    </div>
+    <div class="card">
+      <h4>What this tells us</h4>
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Variant</th><th class="num">Features</th><th class="num">ROC-AUC</th><th>Best model</th></tr></thead>
+        <tbody>
+          <tr><td>Shipping Mode only</td><td class="num">{{ ab.mode_only.n_features }}</td>
+              <td class="num">{{ '%.4f'|format(ab.mode_only.metrics.roc_auc) }}</td>
+              <td>{{ ab.mode_only.best_model }}</td></tr>
+          <tr><td>All decision-time features</td><td class="num">{{ ab.full.n_features }}</td>
+              <td class="num">{{ '%.4f'|format(ab.full.metrics.roc_auc) }}</td>
+              <td>{{ ab.full.best_model }}</td></tr>
+          <tr><td>All except Shipping Mode</td><td class="num">{{ ab.without_mode.n_features }}</td>
+              <td class="num">{{ '%.4f'|format(ab.without_mode.metrics.roc_auc) }}</td>
+              <td>{{ ab.without_mode.best_model }}</td></tr>
+        </tbody>
+      </table></div>
+      <p style="margin-top:12px">Shipping mode alone recovers
+      {{ '%.0f'|format(100 * ab.mode_only.metrics.roc_auc / ab.full.metrics.roc_auc) }}% of the
+      full model's discriminative power. Remove it and all
+      {{ ab.without_mode.n_features }} remaining operational and external factors together
+      reach {{ '%.3f'|format(ab.without_mode.metrics.roc_auc) }} &mdash; a coin flip is 0.500.</p>
+      <div class="callout good" style="margin-top:12px">
+        <p><strong>This doubles as the leakage check.</strong> If the without-mode variant
+        scored materially above chance, it would mean an outcome-derived column had slipped
+        into the feature set. At {{ '%.3f'|format(ab.without_mode.metrics.roc_auc) }} the
+        screen is holding.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Baseline and decision-support models</h3>
+  <div class="grid cols-2">
+    <div class="card"><h4>Baseline model</h4>
+      <p>Includes the historically chosen <span class="mono">Shipping Mode</span> as an observed
+      feature. This is the honest forecasting model: it answers "given how this order is
+      actually being shipped, how likely is it to be late?"</p>
+    </div>
+    <div class="card"><h4>Decision-support model</h4>
+      <p>The same fitted model, queried counterfactually: each order is re-scored with every
+      shipping mode substituted in, and the results feed the decision engine.</p>
+      <div class="callout warn" style="margin-top:12px">
+        <p><strong>This is not a causal estimate.</strong> Shipping-mode assignment here is
+        observational, so substituting a mode gives a <em>model-implied scenario</em>, not a
+        prediction of what would happen if management actually switched. Results are labelled
+        that way throughout the simulator.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MC = {{ analytics.model_comparison | tojson }};
+const AB = {{ analytics.ablation | tojson }};
+const names = Object.keys(MC);
+
+groupedBar('c-compare', names, [
+  { name: 'ROC-AUC', values: names.map(n => MC[n].roc_auc), color: PALETTE.navy },
+  { name: 'PR-AUC',  values: names.map(n => MC[n].pr_auc),  color: PALETTE.accent },
+  { name: 'F1',      values: names.map(n => MC[n].f1),      color: PALETTE.light }
+], { height: 260, ytitle: 'Score' });
+
+draw('c-ablation', [{
+  type: 'bar', orientation: 'h',
+  y: ['All except Shipping Mode', 'Shipping Mode only', 'All features'],
+  x: [AB.without_mode.metrics.roc_auc, AB.mode_only.metrics.roc_auc, AB.full.metrics.roc_auc],
+  marker: { color: [PALETTE.grey, PALETTE.amber, PALETTE.navy] },
+  text: [AB.without_mode.metrics.roc_auc.toFixed(3), AB.mode_only.metrics.roc_auc.toFixed(3),
+         AB.full.metrics.roc_auc.toFixed(3)],
+  textposition: 'auto',
+  hovertemplate: '%{y}: %{x:.4f}<extra></extra>'
+}], {
+  height: 260, margin: { l: 190, r: 24, t: 14, b: 46 },
+  xaxis: { title: 'Held-out ROC-AUC', range: [0.45, 0.85] },
+  shapes: [{ type: 'line', x0: 0.5, x1: 0.5, y0: -0.5, y1: 2.5,
+             line: { color: PALETTE.red, width: 2, dash: 'dash' } }],
+  annotations: [{ x: 0.5, y: 2.5, text: 'chance', showarrow: false,
+                  font: { size: 10, color: PALETTE.red }, yshift: 8 }]
+});
+</script>
+{% endblock %}

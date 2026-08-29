@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Model Diagnostics &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set m = analytics.model_comparison[analytics.best_model] %}
+{% set cur = analytics.curves %}
+{% set lg = analytics.logistic %}
+{% set vif = analytics.vif %}
+{% set cal = analytics.calibration %}
+
+<div class="page-head">
+  <h2>Model diagnostics</h2>
+  <p>Confusion matrix, ROC and precision-recall curves, threshold behaviour, logistic
+  regression statistics, multicollinearity and calibration for the preferred model
+  ({{ analytics.best_model }}).</p>
+</div>
+
+<section>
+  <h3>Confusion matrix</h3>
+  <div class="grid sidebar">
+    <div class="card">
+      <h4>At threshold {{ '%.2f'|format(m.threshold) }}</h4>
+      <div class="grid cols-2" style="gap:10px">
+        <div class="kpi"><div class="label">True positive</div>
+          <div class="value" style="color:var(--good)">{{ '{:,}'.format(m.confusion.tp) }}</div>
+          <div class="sub">late, predicted late</div></div>
+        <div class="kpi"><div class="label">True negative</div>
+          <div class="value" style="color:var(--good)">{{ '{:,}'.format(m.confusion.tn) }}</div>
+          <div class="sub">on time, predicted on time</div></div>
+        <div class="kpi"><div class="label">False positive</div>
+          <div class="value" style="color:var(--warn)">{{ '{:,}'.format(m.confusion.fp) }}</div>
+          <div class="sub">on time, predicted late</div></div>
+        <div class="kpi"><div class="label">False negative</div>
+          <div class="value" style="color:var(--bad)">{{ '{:,}'.format(m.confusion.fn) }}</div>
+          <div class="sub">late, predicted on time</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>What each cell costs the business</h4>
+      <table class="compact"><tbody>
+        <tr><td style="width:150px"><span class="badge bad">False negative</span></td>
+            <td>An order predicted as not late that arrives late. No mitigation is triggered,
+            the customer is surprised, and service recovery happens after the fact. This is
+            the expensive error for a service business.</td></tr>
+        <tr><td><span class="badge warn">False positive</span></td>
+            <td>An order predicted late that arrives on time. Cost is a needless mode upgrade
+            or an unnecessary proactive notification &mdash; real, but bounded and knowable in
+            advance.</td></tr>
+        <tr><td><span class="badge good">True positive</span></td>
+            <td>Correctly flagged late order. This is where the decision engine can act:
+            upgrade the mode, or warn the customer before they chase.</td></tr>
+        <tr><td><span class="badge good">True negative</span></td>
+            <td>Correctly cleared. No intervention, no cost.</td></tr>
+      </tbody></table>
+      <div class="callout" style="margin-top:14px">
+        <p><strong>Because false negatives cost more than false positives, recall matters more
+        than precision here.</strong> At the default threshold the model recalls
+        {{ '%.1f'|format(100 * m.recall) }}% of genuinely late orders. The slider below shows
+        exactly what raising recall costs in false positives &mdash; and the decision page
+        prices that trade-off in dollars rather than leaving it as a judgement call.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>ROC and precision-recall curves</h3>
+  <div class="grid cols-2">
+    <div class="card"><h4>ROC curve</h4>
+      <p class="hint">AUC = {{ '%.4f'|format(m.roc_auc) }} &middot;
+        Youden's J maximised at threshold {{ '%.2f'|format(cur.youden.threshold) }}
+        (J = {{ '%.4f'|format(cur.youden.j) }})</p>
+      <div id="c-roc" class="chart"></div></div>
+    <div class="card"><h4>Precision-recall curve</h4>
+      <p class="hint">PR-AUC = {{ '%.4f'|format(m.pr_auc) }} &middot;
+        baseline (always predict late) = {{ '%.3f'|format(metadata.class_balance) }}</p>
+      <div id="c-pr" class="chart"></div></div>
+  </div>
+  <div class="callout warn" style="margin-top:14px">
+    <p><strong>Youden's J is a diagnostic, not the business-optimal threshold.</strong> It
+    weights a false positive and a false negative equally, which they are not. The
+    economically justified operating point comes from the expected-cost model on the
+    <a href="{{ url_for('decision_page') }}">Decision Optimization</a> page.</p>
+  </div>
+</section>
+
+<section>
+  <h3>Threshold simulator</h3>
+  <div class="card">
+    <div class="grid sidebar">
+      <div>
+        <label class="field"><span class="name">Classification threshold</span>
+          <div class="range-row">
+            <input type="range" id="thr" min="0.10" max="0.90" step="0.01" value="0.50">
+            <output id="thr-out">0.50</output>
+          </div>
+        </label>
+        <div id="thr-stats"></div>
+        <p class="note" style="margin-top:12px">Lower the threshold to catch more late orders
+        at the cost of more false alarms; raise it to intervene only on the clearest cases.</p>
+      </div>
+      <div>
+        <div id="c-threshold" class="chart"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Logistic regression diagnostics</h3>
+  <div class="grid cols-4">
+    <div class="kpi"><div class="label">Log-likelihood</div><div class="value">{{ lg.log_likelihood }}</div></div>
+    <div class="kpi"><div class="label">AIC</div><div class="value">{{ lg.aic }}</div></div>
+    <div class="kpi"><div class="label">BIC</div><div class="value">{{ lg.bic }}</div></div>
+    <div class="kpi"><div class="label">Deviance</div><div class="value">{{ lg.deviance }}</div></div>
+    <div class="kpi"><div class="label">Parameters</div><div class="value">{{ lg.n_parameters }}</div></div>
+    <div class="kpi"><div class="label">Observations</div>
+      <div class="value">{{ '{:,}'.format(lg.n_observations) }}</div></div>
+    <div class="kpi"><div class="label">Pseudo R&sup2;</div><div class="value">{{ lg.pseudo_r2 }}</div>
+      <div class="sub">McFadden</div></div>
+    <div class="kpi"><div class="label">Null log-likelihood</div><div class="value">{{ lg.ll_null }}</div></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h4>Reading odds ratios</h4>
+    <div class="grid cols-3">
+      <div class="callout bad"><p><strong>Odds ratio &gt; 1</strong><br>Higher odds of late delivery than the reference level.</p></div>
+      <div class="callout good"><p><strong>Odds ratio &lt; 1</strong><br>Lower odds of late delivery than the reference level.</p></div>
+      <div class="callout"><p><strong>Odds ratio = 1</strong><br>No change in the odds.</p></div>
+    </div>
+    <p class="note" style="margin-top:12px"><strong>Reference categories:</strong>
+      {% for k, v in lg.references.items() %}<span class="mono">{{ k }} = {{ v }}</span>{% if not loop.last %} &middot; {% endif %}{% endfor %}.
+      Each categorical coefficient is read against its reference level, holding the other
+      modelled variables constant.</p>
+  </div>
+
+  <div class="card flush" style="margin-top:16px">
+    <div class="table-wrap scroll-y"><table class="compact">
+      <thead><tr><th>Variable</th><th class="num">Coefficient</th><th class="num">Odds ratio</th>
+        <th class="num">P-value</th><th class="num">95% CI</th><th>Interpretation</th></tr></thead>
+      <tbody>
+      {% for c in lg.coefficients %}
+        <tr>
+          <td class="mono" style="font-size:12px">{{ c.variable }}</td>
+          <td class="num">{{ '%.4f'|format(c.coefficient) }}</td>
+          <td class="num"><strong>{{ '%.3f'|format(c.odds_ratio) }}</strong></td>
+          <td class="num">{{ c.p_display }}</td>
+          <td class="num">{{ '%.3f'|format(c.ci_low) }} &ndash; {{ '%.3f'|format(c.ci_high) }}</td>
+          <td class="wrap" style="font-size:12.5px">{{ c.interpretation }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <h3>Multicollinearity (VIF)</h3>
+  <div class="grid sidebar">
+    <div class="card">
+      <h4>{{ vif.n_problematic }} predictor(s) flagged</h4>
+      <p class="hint">VIF above 10, or not estimable</p>
+      <div class="callout bad"><p>{{ vif.finding }}</p></div>
+      <p class="note" style="margin-top:12px">{{ vif.note }}</p>
+    </div>
+    <div class="card flush">
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Variable</th><th class="num">VIF</th><th>Interpretation</th></tr></thead>
+        <tbody>
+        {% for r in vif.rows %}
+          <tr><td class="mono" style="font-size:12px">{{ r.variable }}</td>
+              <td class="num">{% if r.vif is none %}<span class="badge bad">Infinite</span>
+                  {% elif r.vif > 10 %}<span class="badge bad">{{ r.vif_display }}</span>
+                  {% elif r.vif > 5 %}<span class="badge warn">{{ r.vif_display }}</span>
+                  {% else %}{{ r.vif_display }}{% endif %}</td>
+              <td>{{ r.interpretation }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Calibration</h3>
+  <div class="grid cols-2">
+    <div class="card"><h4>Reliability curve</h4>
+      <p class="hint">Brier score = {{ '%.4f'|format(cal.brier) }} (lower is better)</p>
+      <div id="c-calibration" class="chart"></div></div>
+    <div class="card">
+      <h4>Do the probabilities mean what they say?</h4>
+      <p>The decision layer multiplies predicted probabilities by dollar costs, so it needs
+      probabilities that are accurate in level, not merely correctly ranked. A model can have
+      excellent AUC and still be badly calibrated.</p>
+      <div class="table-wrap" style="margin-top:12px"><table class="compact">
+        <thead><tr><th>Predicted band</th><th class="num">Mean predicted</th>
+          <th class="num">Observed rate</th><th class="num">Orders</th><th class="num">Gap</th></tr></thead>
+        <tbody>
+        {% for b in cal.bins %}
+          <tr><td class="mono">{{ b.bin }}</td>
+              <td class="num">{{ '%.3f'|format(b.predicted) }}</td>
+              <td class="num">{{ '%.3f'|format(b.observed) }}</td>
+              <td class="num">{{ '{:,}'.format(b.count) }}</td>
+              <td class="num">{{ '%+.3f'|format(b.observed - b.predicted) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <p class="note" style="margin-top:12px">Points on the diagonal mean predicted and
+      observed frequencies agree. Systematic deviation would mean the expected-cost
+      calculations are biased, and the probabilities would need recalibrating before the
+      decision engine could be trusted.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CUR   = {{ analytics.curves | tojson }};
+const SWEEP = {{ analytics.threshold_sweep | tojson }};
+const CAL   = {{ analytics.calibration | tojson }};
+const BASE  = {{ metadata.class_balance }};
+
+draw('c-roc', [
+  { type: 'scatter', mode: 'lines', name: 'Model', x: CUR.roc.fpr, y: CUR.roc.tpr,
+    line: { color: PALETTE.accent, width: 2.5 }, fill: 'tozeroy',
+    fillcolor: 'rgba(15,111,197,.08)',
+    hovertemplate: 'FPR %{x:.3f}<br>TPR %{y:.3f}<extra></extra>' },
+  { type: 'scatter', mode: 'lines', name: 'Chance', x: [0, 1], y: [0, 1],
+    line: { color: PALETTE.grey, width: 1.5, dash: 'dash' }, hoverinfo: 'skip' },
+  { type: 'scatter', mode: 'markers', name: "Youden's J",
+    x: [CUR.youden.fpr], y: [CUR.youden.tpr],
+    marker: { color: PALETTE.red, size: 11, symbol: 'diamond' },
+    hovertemplate: "Youden's J at t=" + CUR.youden.threshold + '<extra></extra>' }
+], { height: 340, xaxis: { title: 'False positive rate', range: [0, 1] },
+     yaxis: { title: 'True positive rate', range: [0, 1] } });
+
+draw('c-pr', [
+  { type: 'scatter', mode: 'lines', name: 'Model', x: CUR.pr.recall, y: CUR.pr.precision,
+    line: { color: PALETTE.teal, width: 2.5 }, fill: 'tozeroy',
+    fillcolor: 'rgba(42,143,143,.08)',
+    hovertemplate: 'Recall %{x:.3f}<br>Precision %{y:.3f}<extra></extra>' },
+  { type: 'scatter', mode: 'lines', name: 'Baseline', x: [0, 1], y: [BASE, BASE],
+    line: { color: PALETTE.grey, width: 1.5, dash: 'dash' }, hoverinfo: 'skip' }
+], { height: 340, xaxis: { title: 'Recall', range: [0, 1] },
+     yaxis: { title: 'Precision', range: [0, 1] } });
+
+/* threshold sweep */
+lineChart('c-threshold', SWEEP.map(s => s.threshold), [
+  { name: 'Precision',   values: SWEEP.map(s => s.precision) },
+  { name: 'Recall',      values: SWEEP.map(s => s.recall) },
+  { name: 'F1',          values: SWEEP.map(s => s.f1) },
+  { name: 'Specificity', values: SWEEP.map(s => s.specificity) }
+], { height: 360, xtitle: 'Threshold', ytitle: 'Score' });
+
+const thr = document.getElementById('thr');
+const out = document.getElementById('thr-out');
+function renderThreshold() {
+  const t = parseFloat(thr.value);
+  out.textContent = t.toFixed(2);
+  const row = SWEEP.reduce((a, b) =>
+    Math.abs(b.threshold - t) < Math.abs(a.threshold - t) ? b : a);
+  document.getElementById('thr-stats').innerHTML =
+    [['Precision', row.precision.toFixed(4)],
+     ['Recall / sensitivity', row.recall.toFixed(4)],
+     ['F1', row.f1.toFixed(4)],
+     ['Specificity', row.specificity.toFixed(4)],
+     ["Youden's J", row.youden_j.toFixed(4)],
+     ['Orders flagged high risk', row.n_flagged.toLocaleString() + ' (' + row.flagged_pct + '%)'],
+     ['False negatives', row.fn.toLocaleString()],
+     ['False positives', row.fp.toLocaleString()]]
+    .map(([k, v]) => `<div class="stat-row"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+    .join('');
+}
+thr.addEventListener('input', renderThreshold);
+renderThreshold();
+
+/* calibration */
+draw('c-calibration', [
+  { type: 'scatter', mode: 'lines+markers', name: 'Model',
+    x: CAL.bins.map(b => b.predicted), y: CAL.bins.map(b => b.observed),
+    line: { color: PALETTE.accent, width: 2.5 }, marker: { size: 8 },
+    hovertemplate: 'Predicted %{x:.3f}<br>Observed %{y:.3f}<extra></extra>' },
+  { type: 'scatter', mode: 'lines', name: 'Perfect calibration', x: [0, 1], y: [0, 1],
+    line: { color: PALETTE.grey, width: 1.5, dash: 'dash' }, hoverinfo: 'skip' }
+], { height: 340, xaxis: { title: 'Mean predicted probability', range: [0, 1] },
+     yaxis: { title: 'Observed frequency', range: [0, 1] } });
+</script>
+{% endblock %}

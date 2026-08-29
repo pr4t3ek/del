@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Shipping Mode &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set d = analytics.decision %}
+{% set e = analytics.eda %}
+{% set pr = d.promise_redesign %}
+{% set pl = analytics.profit_vs_lateness %}
+
+<div class="page-head">
+  <h2>Shipping mode economics and risk</h2>
+  <p>How the four documented shipping modes differ in delivery performance and economic value
+  &mdash; and what actually drives the difference.</p>
+</div>
+
+<section>
+  <h3>Mode profile</h3>
+  <div class="card flush">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Shipping mode</th><th class="num">Orders</th><th class="num">Share</th>
+        <th class="num">Late rate</th><th class="num">Promised days</th>
+        <th class="num">Actual transit</th><th class="num">Avg profit</th>
+        <th class="num">Total profit</th></tr></thead>
+      <tbody>
+      {% set mode_rows = e.target_by['Shipping Mode'] %}
+      {% set total_orders = mode_rows | sum(attribute='orders') %}
+      {% for row in mode_rows %}
+        {% set p = d.mode_profile.get(row.level) %}
+        <tr>
+          <td><strong>{{ row.level }}</strong></td>
+          <td class="num">{{ '{:,}'.format(row.orders) }}</td>
+          <td class="num">{{ '%.1f'|format(100 * row.orders / total_orders) }}%</td>
+          <td class="num"><span class="badge {% if row.late_rate > 70 %}bad{% elif row.late_rate > 45 %}warn{% else %}good{% endif %}">{{ row.late_rate }}%</span></td>
+          <td class="num">{{ p.promised_days if p else '&mdash;'|safe }}</td>
+          <td class="num">{{ '%.2f'|format(p.mean_transit) if p else '&mdash;'|safe }}</td>
+          <td class="num">${{ '%.2f'|format(row.avg_profit) }}</td>
+          <td class="num">${{ '{:,.0f}'.format(row.total_profit) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  <p class="note" style="margin-top:10px">Late rate and transit statistics are computed on the
+  modelling population, which excludes
+  {{ '{:,}'.format(analytics.counts.n_cancelled_excluded) }} cancelled shipments; profit
+  figures cover all orders.</p>
+</section>
+
+<section>
+  <h3>The central finding</h3>
+  {% if pr.available %}
+  <div class="grid sidebar">
+    <div class="card">
+      <h4>Transit time vs promise</h4>
+      <div id="c-promise" class="chart short"></div>
+    </div>
+    <div class="card">
+      <h4>Second Class and Standard Class are the same operation</h4>
+      <p>{{ pr.finding }}</p>
+      <div class="grid cols-3" style="margin-top:14px">
+        <div class="kpi"><div class="label">Transit gap</div>
+          <div class="value">{{ '%.3f'|format(pr.transit_gap_days) }}</div>
+          <div class="sub">days &mdash; not operationally meaningful</div></div>
+        <div class="kpi"><div class="label">Late-rate gap</div>
+          <div class="value">{{ '%.0f'|format(100 * pr.late_rate_reduction) }} pp</div>
+          <div class="sub">entirely attributable to the promise</div></div>
+        <div class="kpi"><div class="label">Orders affected</div>
+          <div class="value">{{ '{:,}'.format(pr.orders_affected) }}</div>
+          <div class="sub">shipped Second Class</div></div>
+      </div>
+      <div class="callout good" style="margin-top:14px">
+        <p><strong>Recommendation.</strong> {{ pr.recommendation }}</p>
+      </div>
+      <div class="callout warn" style="margin-top:10px">
+        <p><strong>Scenario-implied, not causal.</strong> The estimated post-change late rate
+        assumes the transit distribution is unchanged by the promise. That holds in this data
+        because transit time does not depend on anything the promise touches &mdash; but it is
+        an assumption, and the commercial value customers place on a shorter promise is not
+        measurable from this dataset.</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Do not read the lowest late rate as the best mode</h3>
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>Late rate vs speed</h4>
+      <div id="c-tradeoff" class="chart"></div>
+      <p class="note">Standard Class has the lowest late rate and the slowest delivery. Same
+      Day has a higher late rate and is eight times faster. Neither dominates: the "best" mode
+      depends on what a day of delay is worth, which is a business assumption rather than
+      something the data settles.</p>
+    </div>
+    <div class="card">
+      <h4>Average profit by mode</h4>
+      <div id="c-profit" class="chart"></div>
+      <p class="note">Profit is almost flat across modes. Together with the near-zero
+      correlation between lateness and profit
+      ({% if pl.available %}{{ pl.correlation }}{% endif %}), this means the economic case for
+      any mode cannot be read off historical profit &mdash; it has to come from an explicit
+      cost model.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Mode performance across segments</h3>
+  <div class="card">
+    <label class="field" style="max-width:320px"><span class="name">Compare across</span>
+      <select id="seg-select">
+        <option value="Market">Market</option>
+        <option value="Order Region">Order Region</option>
+        <option value="Customer Segment">Customer Segment</option>
+        <option value="Department Name">Department Name</option>
+      </select>
+    </label>
+    <div id="c-segment" class="chart tall"></div>
+    <div class="callout warn" style="margin-top:12px">
+      <p><strong>Small-sample caution.</strong> Levels with fewer than 200 orders are excluded
+      from this chart: with a base late rate near 55%, a 50-order cell has a standard error of
+      roughly 7 percentage points, so apparent differences at that size are usually noise.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Economic outcome analysis</h3>
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>Profit by delivery outcome</h4>
+      {% if pl.available %}
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Outcome</th><th class="num">Orders</th><th class="num">Mean profit</th>
+          <th class="num">Median profit</th><th class="num">Total profit</th></tr></thead>
+        <tbody>
+        {% for g in pl.groups %}
+          <tr><td>{{ g.status }}</td><td class="num">{{ '{:,}'.format(g.orders) }}</td>
+              <td class="num">${{ '%.2f'|format(g.mean_profit) }}</td>
+              <td class="num">${{ '%.2f'|format(g.median_profit) }}</td>
+              <td class="num">${{ '{:,.0f}'.format(g.total_profit) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <div class="callout" style="margin-top:12px"><p>{{ pl.finding }}</p></div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h4>Why this matters for the cost model</h4>
+      {% if pl.available %}<p>{{ pl.implication }}</p>{% endif %}
+      <div class="callout assumption" style="margin-top:12px">
+        <p><strong>The dataset has no freight-cost field.</strong> It carries no carrier,
+        warehouse, or logistics-cost column of any kind, so true total logistics cost cannot be
+        calculated from it. The <a href="{{ url_for('decision_page') }}">decision engine</a>
+        uses a transparent scenario cost model whose parameters are stated assumptions and can
+        be changed in the interface. No cost figure in this application is presented as an
+        observed value.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EDA = {{ analytics.eda | tojson }};
+const D   = {{ analytics.decision | tojson }};
+const PROF = EDA.mode_transit_profile || [];
+
+groupedBar('c-promise', PROF.map(p => p.mode), [
+  { name: 'Promised days',       values: PROF.map(p => p.promised),    color: PALETTE.light },
+  { name: 'Actual transit days', values: PROF.map(p => p.actual_mean), color: PALETTE.accent }
+], { ytitle: 'Days', height: 260 });
+
+draw('c-tradeoff', [{
+  type: 'scatter', mode: 'markers+text',
+  x: PROF.map(p => p.actual_mean), y: PROF.map(p => p.late_rate),
+  text: PROF.map(p => p.mode), textposition: 'top center',
+  marker: { size: PROF.map(p => Math.sqrt(p.orders) / 4 + 9), color: PALETTE.accent, opacity: .75 },
+  hovertemplate: '%{text}<br>Transit %{x:.2f} d<br>Late %{y:.1f}%<extra></extra>'
+}], { height: 340, xaxis: { title: 'Mean actual transit (days)' },
+      yaxis: { title: 'Late rate (%)' }, margin: { t: 30 } });
+
+const pm = EDA.financial.profit_by_shipping_mode || [];
+barV('c-profit', pm.map(r => r.level), pm.map(r => r.avg_profit),
+  { height: 340, ytitle: 'Average profit ($)', fmt: v => money(v), color: PALETTE.teal });
+
+const segSel = document.getElementById('seg-select');
+function renderSegment() {
+  const dim = segSel.value;
+  const rows = (EDA.target_by[dim] || []).filter(r => r.orders >= 200)
+                  .sort((a, b) => b.orders - a.orders).slice(0, 14);
+  groupedBar('c-segment', rows.map(r => r.level), [
+    { name: 'Late rate (%)', values: rows.map(r => r.late_rate), color: PALETTE.red, suffix: '%' },
+    { name: 'Avg profit ($)', values: rows.map(r => r.avg_profit), color: PALETTE.teal }
+  ], { height: 440, ytitle: '' });
+}
+segSel.addEventListener('change', renderSegment);
+renderSegment();
+</script>
+{% endblock %}

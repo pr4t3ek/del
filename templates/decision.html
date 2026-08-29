@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}Decision Optimization &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set d = analytics.decision %}
+{% set a = d.assumptions %}
+
+<div class="page-head">
+  <h2>Decision optimization under uncertainty</h2>
+  <p>Given an order's predicted probability of late delivery, which shipping mode minimises
+  expected total supply-chain cost while protecting profitability?</p>
+</div>
+
+<section>
+  <div class="callout assumption">
+    <p><strong>Scenario assumptions &mdash; not observed values from the dataset.</strong>
+    The DataCo dictionary provides no freight-cost field comparable to a carrier invoice, so
+    total logistics cost cannot be measured here. Everything below is computed from a
+    transparent cost model whose parameters you set. Change them and every figure on this page
+    updates.</p>
+  </div>
+</section>
+
+<section>
+  <h3>The expected-cost model</h3>
+  <div class="grid sidebar">
+    <div class="card">
+      <h4>Scenario assumptions</h4>
+      <p class="hint">Adjust and the analysis recomputes</p>
+      <div class="btn-row" style="margin-bottom:14px">
+        {% for key, p in d.presets.items() %}
+          <button class="secondary preset" data-preset="{{ key }}" title="{{ p.description }}">{{ p.label }}</button>
+        {% endfor %}
+      </div>
+
+      <div class="name" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin:14px 0 6px">Freight cost per order ($)</div>
+      {% for mode, cost in a.freight_cost.items() %}
+      <label class="field"><span class="name">{{ mode }}</span>
+        <div class="range-row">
+          <input type="range" class="assume freight" data-mode="{{ mode }}"
+                 min="0" max="60" step="1" value="{{ cost }}">
+          <output>${{ '%.0f'|format(cost) }}</output>
+        </div>
+      </label>
+      {% endfor %}
+
+      <div class="name" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin:16px 0 6px">Cost of a late delivery</div>
+      <label class="field"><span class="name">Fixed service-recovery cost ($)</span>
+        <div class="range-row">
+          <input type="range" class="assume" id="late_penalty_fixed" min="0" max="200" step="5" value="{{ a.late_penalty_fixed }}">
+          <output>${{ '%.0f'|format(a.late_penalty_fixed) }}</output>
+        </div>
+      </label>
+      <label class="field"><span class="name">Share of order value at risk</span>
+        <div class="range-row">
+          <input type="range" class="assume" id="late_penalty_rate" min="0" max="0.5" step="0.01" value="{{ a.late_penalty_rate }}">
+          <output>{{ '%.0f'|format(100 * a.late_penalty_rate) }}%</output>
+        </div>
+      </label>
+
+      <div class="name" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin:16px 0 6px">Time-related cost</div>
+      <label class="field"><span class="name">Holding cost per day (share of order value)</span>
+        <div class="range-row">
+          <input type="range" class="assume" id="holding_rate_per_day" min="0" max="0.01" step="0.0001" value="{{ a.holding_rate_per_day }}">
+          <output>{{ '%.2f'|format(100 * a.holding_rate_per_day) }}%</output>
+        </div>
+      </label>
+      <label class="field"><span class="name">Value of one day faster ($/order/day)</span>
+        <div class="range-row">
+          <input type="range" class="assume" id="speed_value_per_day" min="0" max="40" step="0.5" value="{{ a.speed_value_per_day }}">
+          <output>${{ '%.1f'|format(a.speed_value_per_day) }}</output>
+        </div>
+      </label>
+
+      <div class="name" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin:16px 0 6px">Constraint (optional)</div>
+      <label class="field"><span class="name">Maximum acceptable late probability</span>
+        <div class="range-row">
+          <input type="range" id="max_late" min="0" max="1" step="0.05" value="1">
+          <output>off</output>
+        </div>
+      </label>
+
+      <div class="btn-row" style="margin-top:8px">
+        <button id="reset-assume" class="secondary">Reset to defaults</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h4>Cost formula</h4>
+        <pre class="mono" style="background:var(--line-2);padding:14px;border-radius:6px;overflow-x:auto;font-size:12.5px;line-height:1.7">Expected total cost (order, mode) =
+      freight[mode]                              <span style="color:var(--warn)">assumption</span>
+    + P(late | order, mode) x penalty(order)     <span style="color:var(--accent)">model</span> x <span style="color:var(--warn)">assumption</span>
+    + holding_rate x order_value x transit[mode] <span style="color:var(--warn)">assumption</span>
+    + speed_value x transit[mode]                <span style="color:var(--warn)">assumption</span>
+
+where penalty(order) = fixed + rate x order_value</pre>
+        <p class="note">P(late) comes from the trained model, scored counterfactually with each
+        mode substituted in. Mean transit per mode is measured from the data. Every monetary
+        coefficient is an assumption you control.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Why there is a time term &mdash; and what happens without it</h4>
+        <p>The brief frames expected cost as <span class="mono">shipping cost + P(late) &times;
+        cost of late delivery</span>. Applied literally to this dataset that formula is
+        degenerate: Standard Class has both the lowest assumed freight cost <em>and</em> the
+        lowest observed late rate, so it dominates every alternative for every order under
+        every assumption.</p>
+        <div class="grid cols-2" style="margin-top:12px">
+          <div>
+            <div class="name" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin-bottom:6px">Without time terms</div>
+            <div id="c-degenerate" class="chart short"></div>
+          </div>
+          <div>
+            <div class="name" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin-bottom:6px">With time terms</div>
+            <div id="c-full-mix" class="chart short"></div>
+          </div>
+        </div>
+        <div class="callout warn" style="margin-top:12px">
+          <p>{{ d.degeneracy.explanation }}</p>
+        </div>
+        <p class="note">You can verify this yourself: set both time-related sliders to zero and
+        watch the recommended mix collapse to a single mode.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Shipping-mode decision engine</h3>
+  <div class="card flush">
+    <h4>Expected cost by mode, at the median order value
+      (<span id="median-value" class="mono"></span>)</h4>
+    <p class="hint">Averaged across the scored held-out sample of
+      {{ '{:,}'.format(analytics.counts.n_scored_sample) }} orders</p>
+    <div class="table-wrap"><table id="engine-table">
+      <thead><tr><th>Shipping mode</th><th class="num">Mean P(late)</th>
+        <th class="num">Freight</th><th class="num">Expected delay cost</th>
+        <th class="num">Holding</th><th class="num">Speed cost</th>
+        <th class="num">Expected total</th><th class="num">Mean transit</th>
+        <th>Recommendation</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <h3>Logistics network policy comparison</h3>
+  <div class="callout" style="margin-bottom:14px">
+    <p><strong>Scope.</strong> {{ d.policies.scope_note }}</p>
+  </div>
+  <div class="grid cols-2">
+    <div class="card flush">
+      <h4>Policies compared</h4>
+      <p class="hint">Ranked by expected total cost under the current assumptions</p>
+      <div class="table-wrap"><table id="policy-table">
+        <thead><tr><th>Policy</th><th class="num">Avg cost/order</th>
+          <th class="num">Expected late rate</th><th class="num">Saving</th>
+          <th>Complexity</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h4>Cost vs delivery reliability</h4>
+      <div id="c-policies" class="chart"></div>
+      <p class="note">Down and to the left is better: lower expected cost and lower expected
+      late rate. Robustness under uncertainty is assessed by the sensitivity sweeps below,
+      not by this snapshot.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h4>Policy descriptions</h4>
+    <div class="table-wrap"><table class="compact" id="policy-desc">
+      <thead><tr><th>Policy</th><th>What it means</th><th>Mode mix</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <h3>Break-even analysis</h3>
+  <div class="card flush">
+    <h4>When does upgrading become worthwhile?</h4>
+    <p class="hint">An upgrade pays when the expected saving in delay-related and time-related
+      cost exceeds the incremental freight cost</p>
+    <div class="table-wrap"><table id="breakeven-table">
+      <thead><tr><th>Upgrade</th><th class="num">Incremental freight</th>
+        <th class="num">Observed P(late) from</th><th class="num">Observed P(late) to</th>
+        <th class="num">Break-even P(late)</th><th class="num">Expected cost from</th>
+        <th class="num">Expected cost to</th><th>Verdict</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <h3>Scenario and sensitivity analysis</h3>
+  <p class="note" style="margin-bottom:14px">Because the business question involves
+  uncertainty, the recommendation is reported as a stability region rather than a single
+  answer. Each sweep varies one assumption and records where the optimal mode changes.</p>
+  <div class="grid cols-3">
+    {% for key, s in d.sensitivity.items() %}
+    <div class="card">
+      <h4>{{ key.replace('_', ' ')|title }}</h4>
+      <p class="hint">{{ s.summary }}</p>
+      <div id="c-sens-{{ loop.index }}" class="chart short"></div>
+      {% if s.switch_points %}
+        <div class="callout warn" style="margin-top:10px">
+          <p><strong>Recommendation flips at:</strong>
+          {% for sw in s.switch_points %}{{ sw['from'] }} &rarr; {{ sw.to }} at
+          {{ sw.at }}{% if not loop.last %}; {% endif %}{% endfor %}</p>
+        </div>
+      {% else %}
+        <div class="callout good" style="margin-top:10px">
+          <p><strong>Stable</strong> across the whole swept range.</p>
+        </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h3>Risk / value matrix</h3>
+  <div class="grid sidebar">
+    <div class="card">
+      <h4>Prioritising orders</h4>
+      <p class="hint">Split at the median predicted risk and median order value</p>
+      <div id="matrix-summary"></div>
+      <p class="note" style="margin-top:12px">
+        <strong>Prioritise</strong> &mdash; high risk, high value: the orders where an upgrade
+        or a proactive call is most likely to pay for itself.<br>
+        <strong>Watch / manage</strong> &mdash; high risk, low value: monitor, but the exposure
+        rarely justifies premium freight.<br>
+        <strong>Protect</strong> &mdash; low risk, high value: nothing to fix; avoid disrupting.<br>
+        <strong>Routine</strong> &mdash; low risk, low value: leave alone.
+      </p>
+    </div>
+    <div class="card">
+      <div class="spread" style="margin-bottom:10px">
+        <h4 style="margin:0">Predicted late risk against economic exposure</h4>
+        <label style="margin:0"><select id="matrix-x" style="width:auto">
+          <option value="Order Item Total">Order value</option>
+          <option value="Order Profit Per Order">Order profit</option>
+        </select></label>
+      </div>
+      <div id="c-matrix" class="chart tall"></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/decision.js') }}"></script>
+<script>
+const D0 = {{ analytics.decision | tojson }};
+const SCORED_N = {{ analytics.counts.n_scored_sample }};
+initDecision(D0);
+</script>
+{% endblock %}

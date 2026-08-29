@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ app_title }}{% endblock %}</title>
+{# Inline SVG favicon: keeps the app fully self-contained, no extra request, no 404. #}
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2316324f'/><path d='M6 21h4v5H6zm6-6h4v11h-4zm6-9h4v20h-4z' fill='%230f6fc5'/></svg>">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="{{ url_for('static', filename='js/plotly.min.js') }}"></script>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <h1>{{ app_title }}</h1>
+    <span class="tagline">{{ app_subtitle }}</span>
+    <span class="spacer"></span>
+    <span class="meta">
+      {% if metadata %}Model: {{ metadata.best_model }} &middot; {{ metadata.generated_at[:10] }} &middot; {% endif %}
+      <a href="{{ url_for('pipeline_page') }}">Pipeline</a> &middot;
+      <a href="{{ url_for('governance_page') }}">Governance</a> &middot;
+      <a href="{{ url_for('downloads_page') }}">Downloads</a> &middot;
+      <a href="{{ url_for('upload_page') }}">Upload</a>
+    </span>
+  </div>
+  <nav class="tabs">
+    {% for key, label, endpoint in nav %}
+      <a href="{{ url_for(endpoint) }}" class="{% if active == key %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+</header>
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  DataCo Supply Chain Delivery Analytics &middot;
+  Prediction target <span class="mono">Late_delivery_risk</span> &middot;
+  Decision variable <span class="mono">Shipping Mode</span> &middot;
+  Economic outcome <span class="mono">Order Profit Per Order</span>.
+  Cost figures are scenario assumptions, not observed data &mdash; the dataset contains no
+  freight-cost field.
+</footer>
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

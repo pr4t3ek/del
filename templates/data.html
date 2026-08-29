@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Data Overview &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set h = analytics.health %}
+{% set rec = analytics.reconciliation %}
+
+<div class="page-head">
+  <h2>Data overview and dataset health</h2>
+  <p>Structure, quality and integrity of the DataCo dataset before any modelling, including
+  the columns screened out as personal data, identifiers, or outcome-derived.</p>
+</div>
+
+<section>
+  <div class="grid cols-4">
+    <div class="kpi"><div class="label">Observations</div>
+      <div class="value">{{ '{:,}'.format(h.n_rows) }}</div>
+      <div class="sub">order line items</div></div>
+    <div class="kpi"><div class="label">Orders</div>
+      <div class="value">{{ '{:,}'.format(analytics.counts.n_orders) }}</div>
+      <div class="sub">unique Order Id values</div></div>
+    <div class="kpi"><div class="label">Variables</div>
+      <div class="value">{{ h.n_columns }}</div>
+      <div class="sub">{{ h.n_numeric }} numeric, {{ h.n_categorical }} categorical</div></div>
+    <div class="kpi"><div class="label">Missing cells</div>
+      <div class="value">{{ h.missing_pct }}%</div>
+      <div class="sub">{{ '{:,}'.format(h.n_missing_cells) }} of
+        {{ '{:,}'.format(h.n_rows * h.n_columns) }}</div></div>
+    <div class="kpi"><div class="label">Duplicate rows</div>
+      <div class="value">{{ h.n_duplicate_rows }}</div>
+      <div class="sub">{{ h.duplicate_pct }}% of the dataset</div></div>
+    <div class="kpi"><div class="label">Memory</div>
+      <div class="value">{{ h.memory_mb }} MB</div>
+      <div class="sub">reduced to
+        {{ '%.0f'|format(h.memory_mb / 20) }}&ndash;20 MB after cleaning</div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Grain: line items versus orders</h3>
+  <div class="callout">
+    <p><strong>One row is one order line item, but the delivery outcome belongs to the order.</strong>
+    All {{ '{:,}'.format(analytics.counts.n_orders) }} orders carry exactly one value of
+    <span class="mono">Late_delivery_risk</span>, <span class="mono">Shipping Mode</span> and
+    shipping date across their line items &mdash; the
+    {{ '{:,}'.format(h.n_rows) }} rows are repeated measures, averaging
+    {{ '%.2f'|format(h.n_rows / analytics.counts.n_orders) }} lines per order.</p>
+    <p>This drives two decisions elsewhere in the application: statistical tests run at the
+    order grain, so a three-line order does not count three times toward one delivery outcome;
+    and the train/test split is grouped on <span class="mono">Order Id</span>, so no order
+    appears on both sides.</p>
+  </div>
+</section>
+
+<section>
+  <h3>Target and key distributions</h3>
+  <div class="grid cols-3">
+    <div class="card"><h4>Late_delivery_risk</h4>
+      <p class="hint">Target distribution, order grain</p>
+      <div id="chart-target" class="chart short"></div>
+      <p class="note">Near-balanced at {{ analytics.eda.late_rate }}% positive, so no
+      resampling or class weighting is applied.</p>
+    </div>
+    <div class="card"><h4>Shipping Mode</h4>
+      <p class="hint">Decision variable distribution</p>
+      <div id="chart-mode" class="chart short"></div></div>
+    <div class="card"><h4>Order Profit Per Order</h4>
+      <p class="hint">Economic outcome distribution</p>
+      <div id="chart-profit" class="chart short"></div></div>
+  </div>
+</section>
+
+<section>
+  <h3>Data dictionary reconciliation</h3>
+  {% if rec.available %}
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>Discrepancies found</h4>
+      <p class="hint">{{ rec.n_actual }} CSV columns against {{ rec.n_documented }} documented fields</p>
+      {% if rec.undocumented %}
+        <div class="callout warn">
+          <p><strong>Present in the CSV but undocumented:</strong>
+          {% for c in rec.undocumented %}<span class="mono">{{ c }}</span>{% if not loop.last %}, {% endif %}{% endfor %}.
+          Undocumented and 86% missing, so it is excluded from the feature set.</p>
+        </div>
+      {% endif %}
+      {% if rec.spelling_mismatches %}
+        <div class="callout warn" style="margin-top:10px">
+          <p><strong>Spelling mismatches between dictionary and CSV:</strong></p>
+          <ul class="clean">
+            {% for m in rec.spelling_mismatches %}
+            <li>CSV has <span class="mono">{{ m.csv }}</span>, dictionary has
+                <span class="mono">{{ m.dictionary }}</span></li>
+            {% endfor %}
+          </ul>
+          <p>A literal lookup on the dictionary spelling raises <span class="mono">KeyError</span>,
+          so all column access goes through a case- and whitespace-insensitive resolver.</p>
+        </div>
+      {% endif %}
+      {% if rec.missing_from_csv %}
+        <div class="callout bad" style="margin-top:10px">
+          <p><strong>Documented but missing from the CSV:</strong>
+          {% for c in rec.missing_from_csv %}<span class="mono">{{ c }}</span>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+        </div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h4>Columns carrying no signal</h4>
+      <p class="hint">Constant or entirely missing &mdash; dropped outright</p>
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Column</th><th class="num">Unique</th><th class="num">Missing</th><th>Reason</th></tr></thead>
+        <tbody>
+        {% for c in h.columns if c.column in h.dead_columns %}
+          <tr><td class="mono">{{ c.column }}</td>
+              <td class="num">{{ c.unique }}</td>
+              <td class="num">{{ c.missing_pct }}%</td>
+              <td>{% if c.missing_pct == 100.0 %}Entirely missing{% else %}Constant value{% endif %}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% if h.duplicated_pairs %}
+      <h4 style="margin-top:18px">Exactly duplicated column pairs</h4>
+      <p class="hint">Byte-for-byte identical across every row; the second is dropped</p>
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th>Kept</th><th>Dropped</th></tr></thead>
+        <tbody>
+        {% for p in h.duplicated_pairs %}
+          <tr><td class="mono">{{ p.kept }}</td><td class="mono">{{ p.dropped }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="callout warn"><p>The data dictionary could not be loaded, so reconciliation was skipped.</p></div>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Sensitive and outcome-derived fields</h3>
+  <div class="grid cols-3">
+    <div class="card"><h4>Potential PII</h4>
+      <p class="hint">Excluded from all models</p>
+      <div class="tag-list">
+        {% for c in h.pii_columns %}<span class="badge bad">{{ c }}</span>{% endfor %}
+      </div>
+      <p class="note" style="margin-top:10px">Customer names, street addresses and per-row
+      geocodes make this table re-identifiable in shape even though email and password are
+      masked placeholders.</p>
+    </div>
+    <div class="card"><h4>Potential leakage</h4>
+      <p class="hint">Known only after the delivery outcome</p>
+      <div class="tag-list">
+        {% for c in h.leakage_columns %}<span class="badge warn">{{ c }}</span>{% endfor %}
+      </div>
+      <p class="note" style="margin-top:10px">See
+      <a href="{{ url_for('classification_page') }}">Classification</a> for the full
+      predictor-availability table and the reasoning behind each exclusion.</p>
+    </div>
+    <div class="card"><h4>Identifiers</h4>
+      <p class="hint">Not meaningful as numeric predictors</p>
+      <div class="tag-list">
+        {% for c in h.identifier_columns %}<span class="badge mute">{{ c }}</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Outlier counts</h3>
+  <div class="card">
+    <p class="hint">Values beyond 1.5 &times; IQR from the quartiles, on measures rather than identifiers</p>
+    <div class="table-wrap"><table class="compact">
+      <thead><tr><th>Column</th><th class="num">Outliers</th><th class="num">Share</th></tr></thead>
+      <tbody>
+      {% for o in h.outliers %}
+        <tr><td class="mono">{{ o.column }}</td>
+            <td class="num">{{ '{:,}'.format(o.count) }}</td>
+            <td class="num">{{ o.pct }}%</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="note" style="margin-top:10px">Retained rather than removed: these are genuine
+    high-value orders and loss-making lines, not data errors. Tree-based models are
+    insensitive to them, and the logistic model uses standardised inputs.</p>
+  </div>
+</section>
+
+<section>
+  <h3>Full column inventory</h3>
+  <div class="card flush">
+    <div class="table-wrap scroll-y"><table class="compact">
+      <thead><tr><th>Column</th><th>Type</th><th class="num">Missing</th><th class="num">Missing %</th>
+                 <th class="num">Unique</th><th>Example value</th></tr></thead>
+      <tbody>
+      {% for c in h.columns %}
+        <tr>
+          <td class="mono">{{ c.column }}</td>
+          <td>{{ c.dtype }}</td>
+          <td class="num">{{ '{:,}'.format(c.missing) }}</td>
+          <td class="num">{{ c.missing_pct }}%</td>
+          <td class="num">{{ '{:,}'.format(c.unique) }}</td>
+          <td class="wrap">{{ c.example }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EDA = {{ analytics.eda | tojson }};
+barV('chart-target', ['On time', 'Late'],
+  [EDA.ontime_count, EDA.late_count],
+  { colors: [PALETTE.green, PALETTE.red], height: 230, ytitle: 'Orders',
+    fmt: v => v.toLocaleString() });
+
+const modeRows = EDA.target_by['Shipping Mode'] || [];
+barV('chart-mode', modeRows.map(r => r.level), modeRows.map(r => r.orders),
+  { height: 230, ytitle: 'Orders', fmt: v => v.toLocaleString() });
+
+const pd = EDA.financial.profit_distribution;
+histogram('chart-profit', pd.edges, pd.counts,
+  { height: 230, xtitle: 'Order Profit Per Order ($)' });
+</script>
+{% endblock %}

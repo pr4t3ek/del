@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Model Governance &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set ab = analytics.ablation %}
+
+<div class="page-head">
+  <h2>Model governance</h2>
+  <p>Limitations, assumptions and what would need monitoring if this model were deployed.</p>
+</div>
+
+<section>
+  <h3>Limitations</h3>
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>Data and inference</h4>
+      <ul class="clean">
+        <li><strong>Correlation is not causation.</strong> Every association reported here is
+        descriptive.</li>
+        <li><strong>Shipping-mode assignment is observational.</strong> Historical data does
+        not identify the causal effect of switching mode. Counterfactual scores are
+        model-implied scenarios, not predicted outcomes of an intervention.</li>
+        <li><strong>No freight-cost data exists.</strong> The dataset has no carrier,
+        warehouse or logistics-cost field, so total logistics cost cannot be measured. All
+        cost figures rest on stated assumptions.</li>
+        <li><strong>Late delivery has no measurable profit impact in this data.</strong> The
+        correlation is {{ analytics.profit_vs_lateness.correlation }}, so the penalty for
+        lateness cannot be calibrated from the data and must be assumed.</li>
+        <li><strong>Post-outcome variables cannot be used ex ante.</strong> Excluding them
+        costs a great deal of apparent accuracy, and that is the correct trade.</li>
+        <li><strong>The final year is partial.</strong>
+        {{ analytics.eda.partial_final_year.year }} contains only
+        {{ '{:,}'.format(analytics.eda.partial_final_year.orders) }} orders.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>What this dataset can and cannot answer</h4>
+      <div class="callout warn">
+        <p><strong>The delay process here is close to mode-determined.</strong> Realised
+        transit time depends on shipping mode and very little else: with mode removed, all
+        {{ ab.without_mode.n_features }} remaining operational and external factors together
+        reach {{ '%.3f'|format(ab.without_mode.metrics.roc_auc) }} AUC against a chance level
+        of 0.500. Second Class and Standard Class have statistically indistinguishable transit
+        distributions and differ only in what they promise.</p>
+        <p>Conclusions about which factors drive delay therefore describe <em>this dataset's
+        structure</em>. They should not be read as a general finding that geography, product
+        or seasonality never affect real-world delivery performance &mdash; only that they do
+        not do so here.</p>
+      </div>
+      <div class="callout" style="margin-top:12px">
+        <p><strong>What does transfer.</strong> The methodology &mdash; leakage screening,
+        order-grain testing, effect sizes alongside p-values, and pricing the
+        reliability/speed trade-off explicitly rather than optimising late rate alone
+        &mdash; applies to any real delivery dataset.</p>
+      </div>
+      <div class="callout bad" style="margin-top:12px">
+        <p><strong>Privacy.</strong> Although email and password are masked placeholders, the
+        source file still carries customer names, street addresses and per-row geocodes. It is
+        shaped like a re-identifiable customer table and should be handled accordingly. All
+        such fields are excluded from every model here.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Model monitoring</h3>
+  <div class="card">
+    <p class="hint">Metrics that would need tracking in production, and what a shift in each
+      would indicate</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Metric</th><th>Current baseline</th><th>What a drift would mean</th></tr></thead>
+      <tbody>
+        <tr><td><strong>AUC drift</strong></td>
+            <td class="mono">{{ '%.4f'|format(analytics.model_comparison[analytics.best_model].roc_auc) }}</td>
+            <td>Falling discrimination: the relationship between mode and delay is changing,
+            or a new factor has started to matter.</td></tr>
+        <tr><td><strong>Calibration drift</strong></td>
+            <td class="mono">Brier {{ '%.4f'|format(analytics.calibration.brier) }}</td>
+            <td>Probabilities drifting from observed frequencies. Critical here, because the
+            decision engine multiplies them by dollar costs.</td></tr>
+        <tr><td><strong>Feature distribution drift</strong></td>
+            <td class="mono">{{ metadata.features|length }} features</td>
+            <td>Order mix moving away from the training distribution &mdash; new markets,
+            new categories, changed order sizes.</td></tr>
+        <tr><td><strong>Late-delivery rate drift</strong></td>
+            <td class="mono">{{ analytics.eda.late_rate }}%</td>
+            <td>Underlying service performance changing, or delivery promises being reset.</td></tr>
+        <tr><td><strong>Shipping-mode mix drift</strong></td>
+            <td class="mono">{{ analytics.decision.mode_profile|length }} modes in use</td>
+            <td>The policy is being applied differently than modelled, invalidating the cost
+            comparison.</td></tr>
+        <tr><td><strong>Economic outcome drift</strong></td>
+            <td class="mono">${{ '%.2f'|format(analytics.eda.financial.profit_stats.mean) }} avg profit</td>
+            <td>Margins moving, which changes the value at risk in the penalty term and can
+            flip the recommended policy.</td></tr>
+        <tr><td><strong>Assumption review</strong></td>
+            <td class="mono">4 cost parameters</td>
+            <td>Freight rates and service-recovery costs change over time. The sensitivity
+            sweeps show which assumptions the recommendation is most exposed to.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <h3>Reproducibility</h3>
+  <div class="card">
+    <div class="grid cols-4">
+      <div class="kpi"><div class="label">Random seed</div>
+        <div class="value">{{ metadata.random_state }}</div></div>
+      <div class="kpi"><div class="label">Artifacts generated</div>
+        <div class="value" style="font-size:15px">{{ metadata.generated_at[:16] }}</div>
+        <div class="sub">UTC</div></div>
+      <div class="kpi"><div class="label">Split strategy</div>
+        <div class="value" style="font-size:15px">{{ metadata.split.strategy }}</div></div>
+      <div class="kpi"><div class="label">Preferred model</div>
+        <div class="value" style="font-size:15px">{{ metadata.best_model }}</div></div>
+    </div>
+    <p class="note" style="margin-top:14px">All models and precomputed analytics are produced
+    by <span class="mono">python train_models.py</span> with a fixed seed and saved with
+    joblib. The application loads them at startup and never retrains, so what is displayed is
+    always the same fitted model.</p>
+  </div>
+</section>
+{% endblock %}

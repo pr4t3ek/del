@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}EDA &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set e = analytics.eda %}
+{% set c = analytics.correlations %}
+
+<div class="page-head">
+  <h2>Exploratory data analysis</h2>
+  <p>Delivery performance and economics across shipping mode, geography, customer and
+  product dimensions. All figures are computed at the order grain
+  ({{ '{:,}'.format(e.n_orders) }} orders), not the line-item grain.</p>
+</div>
+
+<section>
+  <h3>Target analysis</h3>
+  <div class="grid cols-2">
+    <div class="card"><h4>Late vs on time</h4>
+      <p class="hint">{{ e.late_rate }}% of orders missed their promised date</p>
+      <div id="c-target" class="chart short"></div></div>
+    <div class="card"><h4>Late-delivery rate by shipping mode</h4>
+      <p class="hint">The decision variable, and the only material driver</p>
+      <div id="c-by-mode" class="chart short"></div></div>
+    <div class="card"><h4>By market</h4>
+      <div id="c-by-market" class="chart short"></div></div>
+    <div class="card"><h4>By customer segment</h4>
+      <div id="c-by-segment" class="chart short"></div></div>
+    <div class="card"><h4>By order region</h4>
+      <div id="c-by-region" class="chart"></div></div>
+    <div class="card"><h4>By department</h4>
+      <div id="c-by-dept" class="chart"></div></div>
+  </div>
+  <div class="callout" style="margin-top:16px">
+    <p><strong>Read the flat bars as the finding, not as a null chart.</strong>
+    Late rates by market, region, segment, category and department all sit within roughly a
+    percentage point of the {{ e.late_rate }}% overall rate. Only shipping mode separates.
+    The <a href="{{ url_for('statistics_page') }}">Statistical Tests</a> page quantifies
+    this: every one of those dimensions returns a negligible effect size.</p>
+  </div>
+</section>
+
+<section>
+  <h3>The mechanism behind the mode differences</h3>
+  <div class="grid cols-2">
+    <div class="card"><h4>Promised window vs actual transit time</h4>
+      <p class="hint">What each mode commits to, against what it delivers</p>
+      <div id="c-promise" class="chart short"></div></div>
+    <div class="card"><h4>Distribution of actual transit days</h4>
+      <p class="hint">Share of orders by realised days in transit, within each mode</p>
+      <div id="c-transit" class="chart short"></div></div>
+  </div>
+  <div class="table-wrap card" style="margin-top:16px">
+    <table>
+      <thead><tr><th>Shipping mode</th><th class="num">Orders</th><th class="num">Promised days</th>
+        <th class="num">Actual mean</th><th class="num">Actual median</th>
+        <th class="num">Std dev</th><th class="num">Late rate</th></tr></thead>
+      <tbody>
+      {% for m in e.mode_transit_profile %}
+        <tr><td><strong>{{ m.mode }}</strong></td>
+            <td class="num">{{ '{:,}'.format(m.orders) }}</td>
+            <td class="num">{{ m.promised }}</td>
+            <td class="num">{{ '%.2f'|format(m.actual_mean) }}</td>
+            <td class="num">{{ '%.1f'|format(m.actual_median) }}</td>
+            <td class="num">{{ '%.2f'|format(m.actual_std) }}</td>
+            <td class="num"><span class="badge {% if m.late_rate > 70 %}bad{% elif m.late_rate > 45 %}warn{% else %}good{% endif %}">{{ m.late_rate }}%</span></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h3>Financial analysis</h3>
+  <div class="grid cols-2">
+    <div class="card"><h4>Order Profit Per Order</h4>
+      <p class="hint">mean ${{ '%.2f'|format(e.financial.profit_stats.mean) }},
+        median ${{ '%.2f'|format(e.financial.profit_stats.median) }},
+        min ${{ '%.2f'|format(e.financial.profit_stats.min) }},
+        max ${{ '%.2f'|format(e.financial.profit_stats.max) }}</p>
+      <div id="c-profit-dist" class="chart short"></div></div>
+    <div class="card"><h4>Order Item Profit Ratio</h4>
+      <div id="c-ratio-dist" class="chart short"></div></div>
+    <div class="card"><h4>Average profit by shipping mode</h4>
+      <div id="c-profit-mode" class="chart short"></div></div>
+    <div class="card"><h4>Profit: late vs on-time orders</h4>
+      <p class="hint">Descriptive association, not a causal effect</p>
+      <div id="c-profit-late" class="chart short"></div>
+      <p class="note">
+        {% set pl = analytics.profit_vs_lateness %}
+        {% if pl.available %}Correlation between lateness and profit is
+        {{ pl.correlation }} &mdash; effectively zero.{% endif %}</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Numeric variable explorer</h3>
+  <div class="card">
+    <div class="grid cols-4" style="align-items:end">
+      <label class="field"><span class="name">Variable</span>
+        <select id="num-select">
+          {% for n in e.numeric_options %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+        </select>
+      </label>
+      <div id="num-stats" class="grid cols-3" style="grid-column: span 3; gap:8px"></div>
+    </div>
+    <div class="grid cols-2" style="margin-top:14px">
+      <div><div id="c-num-hist" class="chart short"></div></div>
+      <div><div id="c-num-box" class="chart short"></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Categorical variable explorer</h3>
+  <div class="card">
+    <label class="field" style="max-width:320px"><span class="name">Variable</span>
+      <select id="cat-select">
+        {% for n in e.categorical_options %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="grid cols-2">
+      <div><div id="c-cat-late" class="chart"></div></div>
+      <div><div id="c-cat-profit" class="chart"></div></div>
+    </div>
+    <div class="table-wrap scroll-y" style="margin-top:12px">
+      <table class="compact"><thead><tr>
+        <th>Level</th><th class="num">Orders</th><th class="num">Late rate</th>
+        <th class="num">Avg profit</th><th class="num">Total profit</th>
+      </tr></thead><tbody id="cat-table"></tbody></table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Temporal patterns</h3>
+  <div class="card">
+    <p class="hint">Monthly order volume and late-delivery rate,
+      {{ e.date_min }} to {{ e.date_max }}</p>
+    <div id="c-monthly" class="chart"></div>
+    <div class="callout warn" style="margin-top:12px">
+      <p><strong>{{ e.partial_final_year.year }} is a partial year.</strong> It contains only
+      {{ '{:,}'.format(e.partial_final_year.orders) }} orders from
+      {% if e.partial_final_year.months_present|length == 1 %}January alone{% else %}
+      {{ e.partial_final_year.months_present|length }} months{% endif %}, against roughly
+      {{ '{:,}'.format(e.year_counts.values()|list|first) }} in a full year. The drop at the
+      right edge is where the data stops, not a decline in the business.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Correlation analysis</h3>
+  <div class="grid sidebar">
+    <div>
+      <div class="card">
+        <h4>Strongest positive</h4>
+        <p class="hint">with Late_delivery_risk</p>
+        <table class="compact"><tbody>
+          {% for r in c.top_positive %}
+          <tr><td class="mono" style="font-size:11.5px">{{ r.variable }}</td>
+              <td class="num">{{ '%.4f'|format(r.correlation) }}</td></tr>
+          {% endfor %}
+        </tbody></table>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h4>Strongest negative</h4>
+        <table class="compact"><tbody>
+          {% for r in c.top_negative %}
+          <tr><td class="mono" style="font-size:11.5px">{{ r.variable }}</td>
+              <td class="num">{{ '%.4f'|format(r.correlation) }}</td></tr>
+          {% endfor %}
+        </tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <h4>Correlation matrix</h4>
+      <p class="hint">Numeric variables, order grain</p>
+      <div id="c-corr" class="chart tall"></div>
+      <div class="callout warn" style="margin-top:12px">
+        <p><strong>{{ c.warning }}</strong></p>
+        <p>{{ c.excluded_note }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EDA  = {{ analytics.eda | tojson }};
+const CORR = {{ analytics.correlations | tojson }};
+const PL   = {{ analytics.profit_vs_lateness | tojson }};
+
+/* ---- target ---- */
+barV('c-target', ['On time', 'Late'], [EDA.ontime_count, EDA.late_count],
+  { colors: [PALETTE.green, PALETTE.red], height: 240, ytitle: 'Orders',
+    fmt: v => v.toLocaleString() });
+
+function lateBar(id, dim, opts) {
+  const rows = (EDA.target_by[dim] || []).slice().sort((a, b) => b.late_rate - a.late_rate);
+  barH(id, rows.map(r => r.level), rows.map(r => r.late_rate),
+    Object.assign({ fmt: v => v.toFixed(1) + '%', xtitle: 'Late rate (%)', suffix: '%' }, opts || {}));
+}
+lateBar('c-by-mode',    'Shipping Mode',    { height: 240, left: 130 });
+lateBar('c-by-market',  'Market',           { height: 240, left: 130 });
+lateBar('c-by-segment', 'Customer Segment', { height: 240, left: 130 });
+lateBar('c-by-region',  'Order Region',     { left: 165 });
+lateBar('c-by-dept',    'Department Name',  { left: 165 });
+
+/* ---- mechanism ---- */
+const PROF = EDA.mode_transit_profile || [];
+groupedBar('c-promise', PROF.map(p => p.mode), [
+  { name: 'Promised days',       values: PROF.map(p => p.promised),    color: PALETTE.light },
+  { name: 'Actual transit days', values: PROF.map(p => p.actual_mean), color: PALETTE.accent }
+], { ytitle: 'Days', height: 250 });
+
+const TD = EDA.transit_distribution || [];
+const modes = [...new Set(TD.map(r => r.mode))];
+const dayVals = [...new Set(TD.map(r => r.days))].sort((a, b) => a - b);
+groupedBar('c-transit', dayVals.map(String),
+  modes.map((m, i) => ({
+    name: m,
+    values: dayVals.map(d => {
+      const hit = TD.find(r => r.mode === m && r.days === d);
+      return hit ? hit.share : 0;
+    }),
+    suffix: '%'
+  })),
+  { ytitle: 'Share of that mode (%)', height: 250 });
+
+/* ---- financial ---- */
+histogram('c-profit-dist', EDA.financial.profit_distribution.edges,
+  EDA.financial.profit_distribution.counts,
+  { height: 250, xtitle: 'Order Profit Per Order ($)' });
+if (EDA.financial.profit_ratio_distribution) {
+  histogram('c-ratio-dist', EDA.financial.profit_ratio_distribution.edges,
+    EDA.financial.profit_ratio_distribution.counts,
+    { height: 250, xtitle: 'Order Item Profit Ratio', color: PALETTE.teal });
+}
+const pm = EDA.financial.profit_by_shipping_mode || [];
+barH('c-profit-mode', pm.map(r => r.level), pm.map(r => r.avg_profit),
+  { fmt: v => money(v), xtitle: 'Average Order Profit Per Order ($)',
+    height: 250, left: 130, color: PALETTE.teal });
+
+const bl = EDA.financial.profit_by_late || [];
+groupedBar('c-profit-late', bl.map(r => r.level), [
+  { name: 'Mean profit',   values: bl.map(r => r.avg_profit),    color: PALETTE.accent },
+  { name: 'Median profit', values: bl.map(r => r.median_profit), color: PALETTE.light }
+], { ytitle: 'Profit ($)', height: 250 });
+
+/* ---- numeric explorer ---- */
+const numSel = document.getElementById('num-select');
+function renderNumeric() {
+  const key = numSel.value;
+  const d = EDA.numeric_detail[key];
+  if (!d) return;
+  const s = d.stats;
+  document.getElementById('num-stats').innerHTML =
+    [['Mean', s.mean], ['Median', s.median], ['Std dev', s.std],
+     ['Min', s.min], ['Max', s.max], ['Count', s.count]]
+    .map(([k, v]) => `<div class="kpi" style="padding:9px 11px">
+        <div class="label">${k}</div>
+        <div class="value" style="font-size:17px">${Number(v).toLocaleString()}</div></div>`).join('');
+  histogram('c-num-hist', d.histogram.edges, d.histogram.counts, { height: 250, xtitle: key });
+  const b = d.box;
+  draw('c-num-box', [{
+    type: 'box', name: key, q1: [b.q1], median: [b.median], q3: [b.q3],
+    lowerfence: [b.lower], upperfence: [b.upper],
+    marker: { color: PALETTE.accent }, boxpoints: false, orientation: 'h', y: [key]
+  }], { height: 250, xaxis: { title: key }, margin: { l: 110, r: 24, t: 14, b: 46 } });
+}
+numSel.addEventListener('change', renderNumeric);
+renderNumeric();
+
+/* ---- categorical explorer ---- */
+const catSel = document.getElementById('cat-select');
+function renderCategorical() {
+  const key = catSel.value;
+  const rows = (EDA.categorical_detail[key] || []).slice()
+    .sort((a, b) => b.late_rate - a.late_rate).slice(0, 22);
+  barH('c-cat-late', rows.map(r => r.level), rows.map(r => r.late_rate),
+    { fmt: v => v.toFixed(1) + '%', xtitle: 'Late rate (%)', left: 170, suffix: '%' });
+  barH('c-cat-profit', rows.map(r => r.level), rows.map(r => r.avg_profit || 0),
+    { fmt: v => money(v, 0), xtitle: 'Average profit ($)', left: 170, color: PALETTE.teal });
+  document.getElementById('cat-table').innerHTML = rows.map(r => `
+    <tr><td>${r.level}</td>
+        <td class="num">${r.orders.toLocaleString()}</td>
+        <td class="num">${r.late_rate.toFixed(1)}%</td>
+        <td class="num">${r.avg_profit !== undefined ? money(r.avg_profit) : '-'}</td>
+        <td class="num">${r.total_profit !== undefined ? money(r.total_profit, 0) : '-'}</td></tr>`).join('');
+}
+catSel.addEventListener('change', renderCategorical);
+renderCategorical();
+
+/* ---- temporal ---- */
+const M = EDA.monthly || [];
+lineChart('c-monthly', M.map(r => r.month), [
+  { name: 'Orders',    values: M.map(r => r.orders),    color: PALETTE.light },
+  { name: 'Late rate (%)', values: M.map(r => r.late_rate), color: PALETTE.red, axis: 'y2', suffix: '%' }
+], { height: 340, ytitle: 'Orders',
+     extra: { yaxis2: { title: 'Late rate (%)', overlaying: 'y', side: 'right',
+                        gridcolor: 'transparent', range: [0, 100] } } });
+
+/* ---- correlation ---- */
+heatmap('c-corr', CORR.labels, CORR.matrix, { height: 620 });
+</script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+{% set d = analytics.decision %}
+{% set ab = analytics.ablation %}
+
+<div class="page-head">
+  <h2>Delivery risk and shipping-mode decision support</h2>
+  <p>
+    A decision-support system that predicts late-delivery risk, evaluates shipping-mode
+    alternatives against expected total supply-chain cost, and recommends a logistics
+    service policy under uncertainty. Built on
+    {{ '{:,}'.format(analytics.counts.n_rows_raw) }} DataCo order line items covering
+    {{ analytics.eda.date_min }} to {{ analytics.eda.date_max }}.
+  </p>
+</div>
+
+<section>
+  <div class="grid cols-3">
+    {% for k in kpis %}
+    <div class="kpi">
+      <div class="label">{{ k.label }}</div>
+      <div class="value">{{ k.value }}</div>
+      <div class="sub">{{ k.sub }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h3>The decision chain</h3>
+  <div class="grid cols-3">
+    <div class="card">
+      <h4>1. Predict</h4>
+      <p class="hint">What can we forecast?</p>
+      <p><span class="mono">Late_delivery_risk</span> from information available at the moment
+      the shipping-mode decision is made. The preferred model
+      ({{ analytics.best_model }}) reaches
+      <strong>{{ '%.3f'|format(analytics.model_comparison[analytics.best_model].roc_auc) }} ROC-AUC</strong>
+      on held-out data.</p>
+    </div>
+    <div class="card">
+      <h4>2. Decide</h4>
+      <p class="hint">What can management change?</p>
+      <p><span class="mono">Shipping Mode</span> &mdash; the one lever in this dataset that is both
+      controllable and materially associated with delivery performance. Every order is scored
+      under all four modes and compared on expected total cost.</p>
+    </div>
+    <div class="card">
+      <h4>3. Optimize</h4>
+      <p class="hint">What is the economic outcome?</p>
+      <p><span class="mono">Order Profit Per Order</span> against a transparent expected-cost model.
+      The best policy tested lowers expected cost per order by
+      <strong>{{ '%.1f'|format(d.policies.policies[0].saving_pct) }}%</strong>
+      versus a single-mode baseline.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Headline findings</h3>
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>Shipping mode is the only material predictor</h4>
+      <p class="hint">Feature ablation on held-out data</p>
+      <div id="chart-ablation" class="chart short"></div>
+      <p class="note">
+        With shipping mode removed, all {{ ab.without_mode.n_features }} remaining operational
+        and external factors together reach only
+        {{ '%.3f'|format(ab.without_mode.metrics.roc_auc) }} AUC &mdash; close to the 0.500 of a
+        coin flip. Shipping mode alone reaches
+        {{ '%.3f'|format(ab.mode_only.metrics.roc_auc) }}.
+      </p>
+    </div>
+    <div class="card">
+      <h4>Late rates track the promise, not the operation</h4>
+      <p class="hint">Promised window vs actual transit time, by mode</p>
+      <div id="chart-promise" class="chart short"></div>
+      <p class="note">
+        Second Class and Standard Class move goods at effectively the same speed, but Second
+        Class promises {{ d.promise_redesign.second_class.promised_days }} days against
+        Standard's {{ d.promise_redesign.standard_class.promised_days }}. That single
+        difference in commitment accounts for a
+        {{ '%.0f'|format(100 * d.promise_redesign.late_rate_reduction) }} percentage-point
+        gap in late rate.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="callout assumption">
+    <p><strong>Scenario assumptions, not observed values.</strong>
+    The DataCo dataset contains no freight-cost, carrier or logistics-cost field, so total
+    supply-chain cost cannot be measured from it. Every monetary parameter in the decision
+    layer &mdash; freight cost per mode, cost of a late delivery, holding rate, value of
+    delivery speed &mdash; is an analyst assumption that you can change on the
+    <a href="{{ url_for('decision_page') }}">Decision Optimization</a> page. Results are
+    reported as ranges and stability regions rather than single numbers.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const AB = {{ analytics.ablation | tojson }};
+const PROFILE = {{ analytics.eda.mode_transit_profile | tojson }};
+
+barH('chart-ablation',
+  ['Shipping Mode only', 'All features', 'All except Shipping Mode'],
+  [AB.mode_only.metrics.roc_auc, AB.full.metrics.roc_auc, AB.without_mode.metrics.roc_auc],
+  { fmt: v => v.toFixed(3), xtitle: 'Held-out ROC-AUC', left: 165, height: 210,
+    color: PALETTE.navy });
+
+groupedBar('chart-promise',
+  PROFILE.map(p => p.mode),
+  [
+    { name: 'Promised days', values: PROFILE.map(p => p.promised), color: PALETTE.light },
+    { name: 'Actual transit days', values: PROFILE.map(p => p.actual_mean), color: PALETTE.accent }
+  ],
+  { ytitle: 'Days', height: 240 });
+</script>
+{% endblock %}

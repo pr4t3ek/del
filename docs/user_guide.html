@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DataCo Supply Chain Analytics Application — User Guide</title>
+<style>
+/* ============================================================================
+   Print setup. Rendered to PDF with WeasyPrint, which supports CSS Paged Media,
+   so page numbers and the contents-page references are generated automatically.
+   ============================================================================ */
+@page {
+  size: A4;
+  margin: 20mm 18mm 20mm 18mm;
+  @bottom-center {
+    content: counter(page);
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 8.5pt;
+    color: #8a94a3;
+  }
+  @bottom-right {
+    content: "DataCo Supply Chain Analytics — User Guide";
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 7.5pt;
+    color: #b3bac6;
+  }
+}
+@page :first { margin: 0; @bottom-center { content: ""; } @bottom-right { content: ""; } }
+
+:root {
+  --ink: #16202c;
+  --body: #2f3a48;
+  --muted: #6b7787;
+  --line: #dfe4ec;
+  --navy: #16324f;
+  --accent: #0f6fc5;
+  --accent-soft: #eef5fc;
+  --good: #1a7f4b;
+  --good-soft: #e9f5ee;
+  --warn: #a2650a;
+  --warn-soft: #fdf4e3;
+  --bad: #b3261e;
+  --bad-soft: #fceeed;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: "DejaVu Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.55;
+  color: var(--body);
+  margin: 0;
+}
+
+p { margin: 0 0 8pt; }
+strong { color: var(--ink); }
+code, .mono {
+  font-family: "DejaVu Sans Mono", monospace;
+  font-size: 8.6pt;
+  background: #f2f5f9;
+  padding: 0.5pt 2.5pt;
+  border-radius: 2pt;
+  color: var(--navy);
+}
+
+/* ---------- Cover ---------- */
+.cover {
+  height: 297mm;
+  padding: 52mm 24mm 24mm;
+  background: var(--navy);
+  color: #fff;
+  page-break-after: always;
+}
+.cover .eyebrow {
+  font-size: 9pt; letter-spacing: 0.22em; text-transform: uppercase;
+  color: #8fc0e8; font-weight: 700; margin-bottom: 14mm;
+}
+.cover h1 {
+  font-size: 30pt; line-height: 1.15; margin: 0 0 6mm;
+  font-weight: 700; letter-spacing: -0.5pt;
+}
+.cover h2 {
+  font-size: 14pt; line-height: 1.4; font-weight: 400;
+  color: #bcd8ef; margin: 0 0 14mm; max-width: 135mm;
+}
+.cover .desc {
+  font-size: 10.5pt; color: #9fc2e0; max-width: 125mm;
+  border-left: 2pt solid #3d78a8; padding-left: 6mm; line-height: 1.6;
+}
+.cover .foot {
+  position: absolute; bottom: 24mm; font-size: 8.5pt; color: #6f9ec9;
+}
+
+/* ---------- Headings ---------- */
+h2.part {
+  font-size: 17pt; color: var(--navy); margin: 0 0 3mm;
+  padding-bottom: 3mm; border-bottom: 1.5pt solid var(--navy);
+  font-weight: 700; letter-spacing: -0.2pt;
+}
+h3.tab {
+  font-size: 14pt; color: var(--navy); margin: 0 0 1mm;
+  font-weight: 700; letter-spacing: -0.2pt;
+}
+.tab-kicker {
+  font-size: 8pt; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--accent); font-weight: 700; margin-bottom: 1.5mm;
+}
+h4 {
+  font-size: 10.5pt; color: var(--ink); margin: 6mm 0 2mm; font-weight: 700;
+}
+h4.q {
+  font-size: 9pt; color: var(--accent); margin: 5mm 0 1.5mm;
+  text-transform: uppercase; letter-spacing: 0.09em; font-weight: 700;
+}
+
+section.chapter { page-break-before: always; }
+section.chapter:first-of-type { page-break-before: avoid; }
+
+/* ---------- Contents ---------- */
+.toc { page-break-after: always; }
+.toc h2 { font-size: 17pt; color: var(--navy); margin: 0 0 6mm;
+          padding-bottom: 3mm; border-bottom: 1.5pt solid var(--navy); }
+.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+.toc li { margin: 0 0 1.6mm; font-size: 9.5pt; }
+.toc li a {
+  text-decoration: none; color: var(--body);
+  display: block; border-bottom: 0.5pt dotted #ccd4e0; padding-bottom: 1.2mm;
+}
+.toc li a::after {
+  content: target-counter(attr(href), page);
+  float: right; color: var(--muted); font-weight: 700;
+}
+.toc li.sub { padding-left: 7mm; font-size: 9pt; }
+.toc li.grp {
+  margin-top: 4mm; font-weight: 700; color: var(--navy);
+  font-size: 8pt; text-transform: uppercase; letter-spacing: 0.11em;
+  border: 0; padding-bottom: 1mm;
+}
+
+/* ---------- Callouts ---------- */
+.callout {
+  border-left: 2.5pt solid var(--accent);
+  background: var(--accent-soft);
+  padding: 4mm 5mm; margin: 4mm 0; font-size: 9.5pt;
+  page-break-inside: avoid;
+}
+.callout .label {
+  display: block; font-size: 7.5pt; letter-spacing: 0.12em;
+  text-transform: uppercase; font-weight: 700; color: var(--accent);
+  margin-bottom: 1.5mm;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout.plain { border-left-color: var(--good); background: var(--good-soft); }
+.callout.plain .label { color: var(--good); }
+.callout.watch { border-left-color: var(--warn); background: var(--warn-soft); }
+.callout.watch .label { color: var(--warn); }
+.callout.assume { border-left-color: var(--bad); background: var(--bad-soft); }
+.callout.assume .label { color: var(--bad); }
+
+/* ---------- Tables ---------- */
+table {
+  width: 100%; border-collapse: collapse; font-size: 9pt;
+  margin: 3mm 0 4mm; page-break-inside: avoid;
+}
+th {
+  text-align: left; background: #eef1f6; color: var(--muted);
+  font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 2mm 2.5mm; border-bottom: 1pt solid var(--line); font-weight: 700;
+}
+td { padding: 2mm 2.5mm; border-bottom: 0.5pt solid #eef1f6; vertical-align: top; }
+td.num { text-align: right; font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
+table.glossary td:first-child { width: 32mm; font-weight: 700; color: var(--ink); }
+table.glossary td:nth-child(2) { width: 62mm; }
+
+/* ---------- Figures ---------- */
+figure { margin: 4mm 0 5mm; page-break-inside: avoid; }
+figure img {
+  width: 100%; border: 0.75pt solid var(--line); border-radius: 2pt;
+}
+figcaption {
+  font-size: 8.3pt; color: var(--muted); margin-top: 2mm;
+  line-height: 1.45; border-left: 1.5pt solid var(--line); padding-left: 3mm;
+}
+figcaption strong { color: var(--body); }
+
+/* ---------- Flow diagram ---------- */
+.flow { margin: 5mm 0; page-break-inside: avoid; }
+.flow .step {
+  border: 0.75pt solid var(--line); border-left: 2.5pt solid var(--accent);
+  background: #fbfcfe; padding: 2.5mm 4mm; margin-bottom: 0;
+  font-size: 9pt;
+}
+.flow .step b { color: var(--navy); }
+.flow .step span { color: var(--muted); }
+.flow .arrow {
+  text-align: center; color: #b9c2ce; font-size: 8pt;
+  line-height: 1; padding: 1mm 0;
+}
+
+/* ---------- Misc ---------- */
+ul.clean { margin: 2mm 0 3mm; padding-left: 5mm; }
+ul.clean li { margin-bottom: 1.8mm; }
+.note { font-size: 8.8pt; color: var(--muted); }
+.lead { font-size: 10.5pt; color: var(--ink); margin-bottom: 4mm; }
+.kpi-row { display: table; width: 100%; margin: 3mm 0 4mm; border-spacing: 2mm 0; }
+.kpi-row .kpi {
+  display: table-cell; width: 33%; border: 0.75pt solid var(--line);
+  border-radius: 2pt; padding: 3mm; background: #fbfcfe; text-align: center;
+}
+.kpi .v { font-size: 15pt; font-weight: 700; color: var(--navy); display: block; }
+.kpi .l { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.08em;
+          color: var(--muted); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ===================== COVER ===================== -->
+<div class="cover">
+  <div class="eyebrow">User Guide</div>
+  <h1>DataCo Supply&nbsp;Chain Analytics Application</h1>
+  <h2>A Simple Guide to Understanding Every Tab, Analysis, Prediction and Business Decision</h2>
+  <div class="desc">
+    An easy-to-understand guide to using and interpreting the DataCo Supply Chain Analytics
+    decision-support application. Written for readers with no technical, statistical or
+    machine-learning background.
+  </div>
+  <div class="foot">Understanding the Application, Analysis, Predictions and Business Decisions</div>
+</div>
+
+<!-- ===================== CONTENTS ===================== -->
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li class="grp">Getting oriented</li>
+    <li><a href="#overview">1. How the application works</a></li>
+    <li><a href="#problem">2. The business problem in plain English</a></li>
+    <li><a href="#navigating">3. Finding your way around</a></li>
+
+    <li class="grp">The twelve main tabs</li>
+    <li class="sub"><a href="#tab-home">Tab 1 — Home</a></li>
+    <li class="sub"><a href="#tab-data">Tab 2 — Data</a></li>
+    <li class="sub"><a href="#tab-eda">Tab 3 — EDA</a></li>
+    <li class="sub"><a href="#tab-statistics">Tab 4 — Statistical Tests</a></li>
+    <li class="sub"><a href="#tab-classification">Tab 5 — Classification</a></li>
+    <li class="sub"><a href="#tab-diagnostics">Tab 6 — Model Diagnostics</a></li>
+    <li class="sub"><a href="#tab-drivers">Tab 7 — Risk Drivers</a></li>
+    <li class="sub"><a href="#tab-shipping">Tab 8 — Shipping Mode</a></li>
+    <li class="sub"><a href="#tab-decision">Tab 9 — Decision Optimization</a></li>
+    <li class="sub"><a href="#tab-simulator">Tab 10 — Simulator</a></li>
+    <li class="sub"><a href="#tab-insights">Tab 11 — Business Insights</a></li>
+    <li class="sub"><a href="#tab-presentation">Tab 12 — Presentation Mode</a></li>
+
+    <li class="grp">The four supporting pages</li>
+    <li class="sub"><a href="#tab-pipeline">Page 13 — Pipeline</a></li>
+    <li class="sub"><a href="#tab-governance">Page 14 — Governance</a></li>
+    <li class="sub"><a href="#tab-downloads">Page 15 — Downloads</a></li>
+    <li class="sub"><a href="#tab-upload">Page 16 — Upload</a></li>
+
+    <li class="grp">Reference</li>
+    <li><a href="#glossary">4. Glossary of terms</a></li>
+    <li><a href="#fit">5. How all the tabs fit together</a></li>
+    <li><a href="#fiveminutes">6. How to explain the application in 5 minutes</a></li>
+  </ol>
+</div>
+
+<!-- ===================== 1. OVERVIEW ===================== -->
+<section class="chapter" id="overview">
+  <h2 class="part">1. How the application works</h2>
+
+  <p class="lead">This application helps a supply chain company answer one practical question:
+  <em>which orders are likely to arrive late, and what should we do about it?</em></p>
+
+  <p>It is not just a prediction tool. Predicting that an order will be late is only useful if
+  you can then do something about it, and if you know whether doing that something is worth the
+  money. So the application takes you through a complete chain of reasoning: understand the data,
+  find the patterns, check whether those patterns are real, build a prediction, work out which
+  factors matter, identify what management can actually change, and finally price that decision.</p>
+
+  <p>Here is the whole journey. Each step has a tab in the application.</p>
+
+  <div class="flow">
+    <div class="step"><b>Business problem</b> — <span>What are we trying to solve? Deliveries arrive late and we want to know why, and what to do.</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Data</b> — <span>What information do we actually have? Three years of orders, with details of what was bought, where it went and how it was shipped.</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Data cleaning</b> — <span>Remove empty columns, duplicate columns and personal data, and make sure we are counting orders rather than counting the same order several times.</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Exploratory analysis</b> — <span>Look at the patterns. Which shipping methods run late? Which countries? Which products?</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Statistical analysis</b> — <span>Check whether those patterns are real differences or just random variation.</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Prediction model</b> — <span>Train a model to estimate the chance that a given order will arrive late.</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Identify key risk drivers</b> — <span>Work out which pieces of information the model is actually relying on.</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Shipping mode decision</b> — <span>Of everything that predicts lateness, which can management actually change? The shipping method.</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Economic impact</b> — <span>Faster shipping costs more. Late delivery costs goodwill. Which trade-off is better?</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Scenario and what-if analysis</b> — <span>Our cost estimates might be wrong. Does the recommendation survive if they are?</span></div>
+    <div class="arrow">▼</div>
+    <div class="step"><b>Management recommendation</b> — <span>A specific, defensible course of action, with its assumptions stated.</span></div>
+  </div>
+
+  <div class="callout plain">
+    <span class="label">In plain English</span>
+    <p>We first understand the data, then look for patterns in delivery delays, then build a
+    model that predicts delay risk. Once we know which orders are risky, we use that information
+    to work out which shipping option makes the most economic sense — and we check whether that
+    answer changes if our cost assumptions turn out to be wrong.</p>
+  </div>
+
+  <h4>What the application is built on</h4>
+  <p>Everything in the application comes from the DataCo supply chain dataset: three years of
+  real order records from 1 January 2015 to 31 January 2018. Nothing on any screen is illustrative
+  or made up. Every percentage, chart and model score is calculated from that data when the
+  application is prepared, and the same numbers appear everywhere they are referenced.</p>
+
+  <p>The one exception is clearly and repeatedly flagged. The dataset contains no shipping-cost
+  information at all — no freight charges, no carrier invoices. So when the application needs to
+  compare the cost of two shipping options, it uses figures that <em>you supply</em> and labels
+  them as assumptions rather than facts. This is explained fully in Tab 9.</p>
+</section>
+
+<!-- ===================== 2. BUSINESS PROBLEM ===================== -->
+<section class="chapter" id="problem">
+  <h2 class="part">2. The business problem in plain English</h2>
+
+  <p class="lead">The formal question the application addresses is:</p>
+
+  <div class="callout">
+    <span class="label">The business question</span>
+    <p><em>Which operational and external factors significantly predict delivery delays, and what
+    is the optimal logistics network design decision under uncertainty to minimize total supply
+    chain cost?</em></p>
+  </div>
+
+  <p>That sentence contains three separate ideas, and the application is built around connecting
+  them. Understanding this connection is the single most important thing for following the rest
+  of the guide.</p>
+
+  <h4>The three pieces</h4>
+
+  <table>
+    <tr>
+      <th style="width:26mm">Piece</th>
+      <th style="width:38mm">In the data</th>
+      <th>What it means</th>
+    </tr>
+    <tr>
+      <td><strong>Prediction</strong><br><span class="note">What can we forecast?</span></td>
+      <td><code>Late_delivery_risk</code></td>
+      <td>For every order, did it arrive later than promised? This is the thing we are trying to
+      predict before it happens. It is a simple yes/no.</td>
+    </tr>
+    <tr>
+      <td><strong>Decision</strong><br><span class="note">What can we change?</span></td>
+      <td><code>Shipping Mode</code></td>
+      <td>The shipping method chosen for the order: Standard Class, Second Class, First Class or
+      Same Day. This is the lever management actually controls. We cannot move a customer to a
+      different country, but we can choose how to ship to them.</td>
+    </tr>
+    <tr>
+      <td><strong>Economic outcome</strong><br><span class="note">What does it cost or earn?</span></td>
+      <td><code>Order Profit Per Order</code></td>
+      <td>The profit made on each order. A shipping decision that avoids delays but destroys
+      margin is not a good decision, so the money has to be part of the picture.</td>
+    </tr>
+  </table>
+
+  <div class="callout plain">
+    <span class="label">The key idea</span>
+    <p>The application is <strong>not</strong> only trying to predict whether an order will be
+    late. It is trying to use that prediction to help management make a better shipping decision,
+    while keeping an eye on the financial consequences.</p>
+    <p>Think of it as three questions in sequence: <em>Is this order likely to be late?</em> →
+    <em>Would shipping it differently help?</em> → <em>Is that change worth what it costs?</em></p>
+  </div>
+
+  <h4>Why "under uncertainty" matters</h4>
+  <p>The business question asks for the best decision <em>under uncertainty</em>. That phrase is
+  doing real work. We do not know exactly what a late delivery costs the business in lost
+  goodwill. We do not know exactly what each shipping method costs. Different reasonable people
+  would put different numbers on both.</p>
+
+  <p>So rather than producing one answer and pretending to be certain, the application lets you
+  change those numbers and shows you how far you would have to move them before the recommendation
+  changes. A recommendation that survives a wide range of assumptions is far more useful than a
+  precise-looking number built on one guess.</p>
+
+  <h4>A note on what this analysis can and cannot claim</h4>
+  <p>Throughout the application you will see careful phrases like "associated with",
+  "model-implied" and "historically observed", rather than "causes". This is deliberate.</p>
+
+  <p>The data records what happened, but nobody ran a controlled experiment. Orders were not
+  randomly assigned to shipping methods. So when we see that one shipping method has more late
+  deliveries than another, we can say the two things <em>go together</em> in the historical
+  record. We cannot prove from this data alone that switching an order's shipping method would
+  <em>cause</em> its delivery outcome to change.</p>
+
+  <div class="callout watch">
+    <span class="label">Watch out for</span>
+    <p>This distinction matters in a presentation. Saying "shipping mode is strongly associated
+    with late delivery, and here is what the model expects if we changed it" is defensible.
+    Saying "shipping mode causes late delivery" is a claim this analysis does not support, and a
+    sharp examiner will notice the difference.</p>
+  </div>
+</section>
+
+<!-- ===================== 3. NAVIGATING ===================== -->
+<section class="chapter" id="navigating">
+  <h2 class="part">3. Finding your way around</h2>
+
+  <p class="lead">The application opens in a web browser at <code>http://127.0.0.1:5000</code>.
+  Across the top is a dark blue bar with the application name, and beneath it a row of twelve
+  tabs.</p>
+
+  <h4>The twelve main tabs</h4>
+  <p>They are arranged in the order you would naturally work through the problem, from left to
+  right:</p>
+
+  <table>
+    <tr><th style="width:42mm">Tab</th><th>What it is for</th></tr>
+    <tr><td><strong>Home</strong></td><td>The headline numbers and the overall story</td></tr>
+    <tr><td><strong>Data</strong></td><td>What information we have and how clean it is</td></tr>
+    <tr><td><strong>EDA</strong></td><td>Exploring patterns in the data with charts</td></tr>
+    <tr><td><strong>Statistical Tests</strong></td><td>Checking which patterns are real</td></tr>
+    <tr><td><strong>Classification</strong></td><td>Building and comparing prediction models</td></tr>
+    <tr><td><strong>Model Diagnostics</strong></td><td>Checking how good the chosen model is</td></tr>
+    <tr><td><strong>Risk Drivers</strong></td><td>Which factors the model relies on</td></tr>
+    <tr><td><strong>Shipping Mode</strong></td><td>Comparing the four shipping options</td></tr>
+    <tr><td><strong>Decision Optimization</strong></td><td>Pricing the shipping decision</td></tr>
+    <tr><td><strong>Simulator</strong></td><td>Testing a single order interactively</td></tr>
+    <tr><td><strong>Business Insights</strong></td><td>The executive summary and recommendations</td></tr>
+    <tr><td><strong>Presentation Mode</strong></td><td>A guided walkthrough for presenting</td></tr>
+  </table>
+
+  <h4>Four more pages in the top corner</h4>
+  <p>In the top-right of the dark blue bar are four smaller links: <strong>Pipeline</strong>,
+  <strong>Governance</strong>, <strong>Downloads</strong> and <strong>Upload</strong>. These are
+  supporting pages rather than analysis pages, and they are covered in sections 13 to 16.</p>
+
+  <h4>If you only have five minutes</h4>
+  <p>Open <strong>Presentation Mode</strong>. It walks through the entire project in twelve
+  numbered steps, each explaining what is being analysed, why that method was used, what it
+  found, what it means for the business, and what to do about it. Section 6 of this guide gives
+  you a spoken script to go with it.</p>
+
+  <div class="callout">
+    <span class="label">A word on the numbers in this guide</span>
+    <p>Every figure quoted in the following sections is the actual value the application
+    produces. If you re-run the analysis without changing anything, you will see exactly these
+    numbers, because the process uses a fixed random seed. If you change the cost assumptions on
+    the Decision Optimization tab, the cost figures will change — that is the point of them.</p>
+  </div>
+</section>
+
+<!-- ===================== TAB 1 — HOME ===================== -->
+<section class="chapter" id="tab-home">
+  <div class="tab-kicker">Tab 1 of 12</div>
+  <h3 class="tab">Home</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>This is the front page of the application. It gives you the six headline numbers about the
+  business, explains in three short panels what the application is trying to do, and shows the
+  two most important findings straight away. If you only look at one screen, look at this one.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>It answers the very first question anyone asks: <em>how big is this problem, and what is
+  this tool for?</em> A manager who has never seen the application should be able to read this
+  page and know both within a minute.</p>
+
+  <figure>
+    <img src="screenshots/home.png" alt="The Home tab">
+    <figcaption><strong>The Home tab.</strong> Six headline figures at the top, the
+    prediction–decision–outcome chain in the middle, and the two headline findings below.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <p><strong>Six summary cards</strong> across the top:</p>
+  <table>
+    <tr><th style="width:44mm">Card</th><th style="width:26mm">Value</th><th>What it means</th></tr>
+    <tr><td>Orders</td><td class="num">65,752</td>
+      <td>How many separate customer orders the analysis covers, drawn from 180,519 individual
+      order lines. One order can contain several products.</td></tr>
+    <tr><td>Late delivery rate</td><td class="num">54.8%</td>
+      <td>The share of orders that arrived later than the date promised to the customer. More
+      than half — which is why this analysis exists.</td></tr>
+    <tr><td>Avg profit per order</td><td class="num">$60.33</td>
+      <td>Average profit made on an order. The median is $72.73; the average is lower because
+      some orders lose money and pull it down.</td></tr>
+    <tr><td>Total order profit</td><td class="num">$3,966,903</td>
+      <td>All the profit across the three years, added up.</td></tr>
+    <tr><td>High-risk orders</td><td class="num">38.3%</td>
+      <td>The share of orders the model flags as more likely than not to be late, when tested on
+      data it had never seen.</td></tr>
+    <tr><td>Avg order value</td><td class="num">$502.71</td>
+      <td>Average total value of an order.</td></tr>
+  </table>
+
+  <p><strong>Three panels</strong> — "Predict", "Decide", "Optimize" — set out the logic of the
+  whole application: what we forecast, what management can change, and how we judge whether the
+  change is worthwhile.</p>
+
+  <p><strong>Two headline finding charts</strong> at the bottom. The left one compares how well
+  the model predicts with and without shipping mode. The right one compares, for each shipping
+  method, the number of days promised against the number of days actually taken.</p>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>The left-hand chart shows three bars, each a score between 0.5 and 1.0. Think of this score
+  as "how good is the model at telling risky orders apart from safe ones", where <strong>0.5 is
+  no better than tossing a coin</strong> and 1.0 would be perfect.</p>
+  <ul class="clean">
+    <li><strong>Shipping Mode only — 0.738.</strong> Using nothing but the shipping method.</li>
+    <li><strong>All features — 0.768.</strong> Using everything available.</li>
+    <li><strong>All except Shipping Mode — 0.535.</strong> Using everything <em>except</em> the
+    shipping method: barely better than a coin toss.</li>
+  </ul>
+
+  <p>The right-hand chart has two bars for each shipping method: the pale bar is the number of
+  days promised, the dark bar is the number of days actually taken on average. Where the dark bar
+  is taller than the pale one, that method typically misses its promise.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>Two things, immediately. First, almost all of the predictable delay risk in this dataset
+  comes from the shipping method — everything else adds very little. Second, delivery methods
+  differ far more in what they <em>promise</em> than in how fast they actually move goods.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It focuses attention. Rather than launching investigations into regional performance or
+  supplier quality, this page says: the lever that matters is the shipping method and the promise
+  attached to it. That is a much cheaper and faster thing to act on.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>The 54.8% late rate is measured against the company's own promised date, not an
+    industry standard.</li>
+    <li>The average profit figure is lower than the median because loss-making orders drag it
+    down — both are shown so you can see this.</li>
+    <li>The "high-risk orders" figure depends on where the cut-off is set. It uses 50% here; you
+    can move that cut-off on the Model Diagnostics tab and watch the number change.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 2 — DATA ===================== -->
+<section class="chapter" id="tab-data">
+  <div class="tab-kicker">Tab 2 of 12</div>
+  <h3 class="tab">Data</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>This page shows exactly what information the analysis is built on, and how trustworthy it
+  is. It counts the records, flags the missing values, points out columns that are empty or
+  duplicated, and identifies the columns holding personal data.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>Because a model is only as good as the data underneath it. Before anyone believes a
+  prediction, they are entitled to ask: where did this come from, is any of it missing, and has
+  anything been quietly thrown away? This page answers all three, in the open.</p>
+
+  <figure>
+    <img src="screenshots/data.png" alt="The Data tab">
+    <figcaption><strong>The Data tab.</strong> Record counts and quality measures at the top,
+    followed by the explanation of orders versus order lines.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>Six count cards</strong> — 180,519 observations, 65,752 orders, 53 variables,
+    the percentage of missing values, the number of duplicate rows (zero), and how much computer
+    memory the data occupies.</li>
+    <li><strong>A "grain" explanation box</strong> covering the difference between an order and
+    an order line. This is the most important idea on the page.</li>
+    <li><strong>Three distribution charts</strong> — how many orders were late versus on time,
+    how orders split across the four shipping methods, and the spread of profit.</li>
+    <li><strong>A dictionary reconciliation section</strong> comparing the actual data file
+    against the accompanying description document, and listing any mismatches.</li>
+    <li><strong>Sensitive and outcome-derived fields</strong> — three lists of columns flagged as
+    personal data, as unusable, or as identifiers.</li>
+    <li><strong>An outlier table and a full column inventory</strong> listing every column with
+    its type, missing count and an example value.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+
+  <div class="callout plain">
+    <span class="label">In plain English: orders versus order lines</span>
+    <p>If a customer buys a shirt and a pair of shoes in one order, the file records that as
+    <em>two rows</em> — one per product. But the delivery is a single event: both items arrive
+    together, either on time or late.</p>
+    <p>So counting rows would count that one delivery twice. Across the whole file, 180,519 rows
+    describe just 65,752 actual deliveries — about 2.75 rows per delivery. The application
+    therefore does its statistical work on the 65,752 orders, not the 180,519 rows.</p>
+  </div>
+
+  <p>In the <strong>dictionary reconciliation</strong> section, two genuine mismatches are
+  reported. One column, <code>Order Zipcode</code>, exists in the data file but is not documented
+  in the description file — and it is 86% empty, so it is excluded. Separately, the data file
+  spells one column with a lower-case "s" (<code>shipping date (DateOrders)</code>) while the
+  description file uses a capital. Small, but enough to break code that looks for the wrong
+  spelling.</p>
+
+  <p>In the <strong>columns carrying no signal</strong> table, four columns are listed as
+  useless: <code>Product Description</code> is entirely empty, <code>Customer Email</code> and
+  <code>Customer Password</code> contain the same placeholder text in every row, and
+  <code>Product Status</code> is the same value throughout. A column that never changes cannot
+  explain anything that does change.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>The data is in good condition: no duplicate rows, very few missing values apart from the one
+  86%-empty column, and a clear unique reference for every order line. The issues found are all
+  structural — empty columns, duplicated columns, a naming mismatch — rather than signs of
+  corrupted or unreliable records.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It establishes that the conclusions rest on complete and consistent records, and it
+  documents every exclusion. If someone challenges a finding by asking "did you leave something
+  out?", this page is the answer — including the full inventory of all 53 columns.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Personal data — customer names, street addresses and map coordinates — is present in the
+    source file but excluded from every model. Handle the underlying file accordingly.</li>
+    <li>Outliers were kept, not deleted. Very large orders and loss-making orders are real
+    business events, not data errors.</li>
+    <li>The final year of data covers January 2018 only. Any year-on-year comparison will show a
+    misleading drop at the end, which the EDA tab flags explicitly.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 3 — EDA ===================== -->
+<section class="chapter" id="tab-eda">
+  <div class="tab-kicker">Tab 3 of 12</div>
+  <h3 class="tab">EDA</h3>
+  <p class="note" style="margin-top:-1mm">EDA stands for Exploratory Data Analysis — looking for
+  patterns before building anything.</p>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>This is where we look at the data through charts, before any modelling. It compares late
+  delivery rates across shipping methods, markets, regions, customer types and product
+  categories, then does the same for profit.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>To find out where the delays actually are. It answers: <em>do some markets run later than
+  others? Do expensive orders arrive late more often? Is the problem getting better or
+  worse?</em> It also gives us something to check the model against later — if the model says one
+  thing and the charts say another, something is wrong.</p>
+
+  <figure>
+    <img src="screenshots/eda.png" alt="The EDA tab">
+    <figcaption><strong>The EDA tab.</strong> Late-delivery rates broken down by shipping mode,
+    market, customer segment and other dimensions.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>Target analysis</strong> — six charts showing the late rate broken down by
+    shipping mode, market, customer segment, order region and department.</li>
+    <li><strong>A mechanism section</strong> comparing promised days against actual days for each
+    shipping method, with a supporting table.</li>
+    <li><strong>Financial analysis</strong> — the spread of profit, average profit by shipping
+    method, and profit compared between late and on-time orders.</li>
+    <li><strong>Two interactive explorers</strong> with drop-down menus: one for numerical
+    variables (13 options) and one for categories (10 options).</li>
+    <li><strong>A monthly trend chart</strong> with a warning box about the partial final year.</li>
+    <li><strong>Correlation analysis</strong> — a coloured grid showing which numerical variables
+    move together.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p><strong>The bar charts.</strong> Each bar is one category, and its length is the percentage
+  of orders in that category that arrived late. A longer bar means more late deliveries. Look
+  for bars that are noticeably different from the others.</p>
+
+  <div class="callout">
+    <span class="label">The most important thing to notice</span>
+    <p>On the market, region, segment and category charts, all the bars are <strong>almost exactly
+    the same length</strong>. Across the five markets the late rate runs from 54.1% to 55.3% —
+    a spread of about one percentage point.</p>
+    <p>That flatness is the finding, not a boring chart. It says geography and product type do
+    not explain delivery delays here. By contrast, the shipping-mode chart runs from 38.1% to
+    95.3% — a 57-point spread.</p>
+  </div>
+
+  <p><strong>The correlation grid.</strong> Blue squares mean two measures rise together, red
+  squares mean one rises as the other falls, and pale squares mean no relationship. It is useful
+  for spotting variables that duplicate each other. The page carries an explicit warning that
+  correlation shows association, not cause.</p>
+
+  <p><strong>The monthly trend.</strong> Orders and late rate over time. The sharp fall at the
+  right-hand edge is not a business improvement — it is where the data stops, in January 2018.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>Delivery delay in this dataset is concentrated almost entirely in the choice of shipping
+  method. The transit-time table shows why: Second Class and Standard Class take essentially the
+  same time to deliver (4.00 and 3.99 days on average), but Second Class promises two days where
+  Standard Class promises four. Same journey, tighter promise, far more broken promises.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It rules things out, which is valuable. There is no point launching regional service
+  improvement programmes when the regional differences are within a percentage point of each
+  other. The evidence points at the promise, not the operation.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>These charts describe what happened. They do not prove that changing anything would
+    produce a different result.</li>
+    <li>All figures are per order, not per order line, so a large basket does not count several
+    times.</li>
+    <li>Ignore the final points on the monthly chart — January 2018 is a partial month of data.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 4 — STATISTICAL TESTS ===================== -->
+<section class="chapter" id="tab-statistics">
+  <div class="tab-kicker">Tab 4 of 12</div>
+  <h3 class="tab">Statistical Tests</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>The previous tab showed patterns in charts. This one checks, formally, whether those
+  patterns are real differences or just the kind of variation you would expect by chance. It runs
+  18 tests, one for each factor that might plausibly affect delivery.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>Because eyes deceive. If you split any dataset into groups, the groups will differ a
+  little, purely by luck. A statistical test tells you whether a difference is bigger than luck
+  would explain. The business question specifically asks which factors <em>significantly</em>
+  predict delays, so this tab answers it directly.</p>
+
+  <figure>
+    <img src="screenshots/statistics.png" alt="The Statistical Tests tab">
+    <figcaption><strong>The Statistical Tests tab.</strong> Summary counts at the top, then the
+    explanation of why 18 factors are tested when the model uses 37 features.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>Four summary cards</strong> — 18 tests run, 1 significant, 1 materially
+    significant, and 62,897 orders tested.</li>
+    <li><strong>An explanation section</strong> answering why 18 factors are tested when the
+    model uses 37 features.</li>
+    <li><strong>A method box</strong> describing which test was used and why.</li>
+    <li><strong>An effect-size chart</strong> ranking all 18 factors by how much they actually
+    matter.</li>
+    <li><strong>The full results table</strong> with, for each factor, the test used, the
+    p-value, the effect size, whether it is significant, and a plain-English interpretation.</li>
+    <li><strong>A hypotheses table</strong> stating what each test was checking.</li>
+    <li><strong>A separate mechanism test</strong>, reported apart from the main set.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+
+  <div class="callout plain">
+    <span class="label">In plain English: p-value and effect size</span>
+    <p>A <strong>p-value</strong> answers "could this difference be a fluke?" A small p-value
+    (below 0.05) means the difference is probably real. It says nothing about how <em>big</em> the
+    difference is.</p>
+    <p>An <strong>effect size</strong> answers the question that actually matters to a business:
+    "is the difference big enough to care about?" Values near 0 mean the factor barely moves the
+    needle; values above about 0.2 mean it matters a lot.</p>
+    <p>You need both. With 62,897 orders, a test can detect differences far too small to act on —
+    so a factor can be statistically significant and commercially irrelevant at the same time.</p>
+  </div>
+
+  <p>Read the results table by looking at the <strong>effect size column first</strong>, not the
+  p-value. The table is deliberately sorted that way.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>Of the 18 factors tested, exactly one is statistically significant after correction:
+  <strong>Shipping Mode</strong>, with an effect size of 0.481 — classed as large. Everything
+  else — market, region, country, product category, department, customer segment, order value,
+  quantity, discount, distance and how busy the network was — fails to reach significance.</p>
+
+  <p>This is a stronger result than it first appears. With nearly 63,000 orders, these tests have
+  enormous power to detect even small effects. Failing to find one means the effect is
+  essentially zero, not merely small.</p>
+
+  <div class="callout">
+    <span class="label">Why 18 tests when the model uses 37 features?</span>
+    <p>The 37 model features are not 37 separate business factors. Some are two columns
+    describing one thing (the calendar month is stored as a pair of values). Some are ingredients
+    of a factor that <em>is</em> tested — map coordinates feed into the distance measure. And some
+    have too many categories for a valid test: <code>Order City</code> has 3,597 different values,
+    which would leave most groups with only a handful of orders.</p>
+    <p>The application answers the "did you miss something?" question a different way. The
+    Classification tab feeds <em>all 36 non-shipping-mode features at once</em> into a model,
+    including any combinations between them. That model scores 0.535, where 0.500 is a coin toss.</p>
+  </div>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It prevents wasted effort. Without this tab, someone would look at the EDA charts, spot that
+  one market is 1.2 points worse than another, and commission a project about it. This tab shows
+  that difference is indistinguishable from noise.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Significant does not mean important. The table gives both measures for exactly this
+    reason.</li>
+    <li>2,855 cancelled orders are excluded from these tests. They never shipped, so calling them
+    "delivered on time" would be misleading.</li>
+    <li>Because 18 tests are run at once, the results are adjusted so that running many tests does
+    not throw up false positives by chance.</li>
+    <li>These results describe this dataset. They are not a general finding that geography never
+    affects delivery in the real world.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 5 — CLASSIFICATION ===================== -->
+<section class="chapter" id="tab-classification">
+  <div class="tab-kicker">Tab 5 of 12</div>
+  <h3 class="tab">Classification</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>This is where the prediction model is built. "Classification" simply means sorting things
+  into categories — here, sorting orders into "likely to be late" and "likely to be on time".
+  The page shows which information the model is allowed to use, how the data was split for
+  testing, and how four different modelling approaches compared.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>It answers: <em>given only what we know at the moment we choose a shipping method, how well
+  can we predict whether this order will be late?</em> Everything downstream depends on this
+  prediction being honest, and this page is where honesty is demonstrated.</p>
+
+  <figure>
+    <img src="screenshots/classification.png" alt="The Classification tab">
+    <figcaption><strong>The Classification tab.</strong> The feature-ablation section, showing
+    how much predictive power comes from shipping mode alone.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>Predictor availability and data leakage</strong> — a warning box plus a 54-row
+    table listing every column and whether it was used.</li>
+    <li><strong>Train/test split cards</strong> — 138,493 rows for training, 34,272 held back for
+    testing, 37 predictors, and the balance between late and on-time orders.</li>
+    <li><strong>A model comparison table</strong> with eight scores for each of four models.</li>
+    <li><strong>A feature ablation section</strong> — a chart and table showing what happens when
+    features are removed.</li>
+    <li><strong>Baseline and decision-support model panels</strong> explaining the two ways the
+    same model is used.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+
+  <div class="callout plain">
+    <span class="label">In plain English: data leakage</span>
+    <p>A model should only use information that would genuinely be known at the moment the
+    decision is made. If you are predicting whether an order will be late <em>before</em> it
+    ships, you cannot use information that only exists <em>after</em> it has been delivered.</p>
+    <p>Think of predicting tomorrow's weather. Using today's air pressure is fair. Using
+    tomorrow's rainfall reading is not a prediction — it is looking at the answer.</p>
+  </div>
+
+  <p>Three columns in this dataset are exactly that kind of answer-peeking, and all three are
+  excluded:</p>
+  <table>
+    <tr><th style="width:56mm">Column</th><th>Why it was excluded</th></tr>
+    <tr><td><code>Delivery Status</code></td>
+      <td>Literally records whether the delivery was late. Matches the answer on 100% of rows.</td></tr>
+    <tr><td><code>Days for shipping (real)</code></td>
+      <td>How long shipping actually took — known only after the fact. Reproduces the answer on
+      97.6% of rows.</td></tr>
+    <tr><td><code>shipping date (DateOrders)</code></td>
+      <td>Subtract the order date from it and you recover the actual transit time.</td></tr>
+  </table>
+
+  <div class="callout watch">
+    <span class="label">Watch out for</span>
+    <p>Including any of these produces accuracy figures around 99%, which is what most published
+    analyses of this dataset report. That number is not a forecast — it is the model reading the
+    answer off the page. This application's lower score is the honest one.</p>
+  </div>
+
+  <p><strong>The split cards.</strong> The model is trained on 138,493 rows and then tested on
+  34,272 it has never seen, so the scores reflect performance on genuinely new orders. The split
+  keeps all lines of the same order together, so an order can never appear on both sides.</p>
+
+  <p><strong>The model comparison table.</strong> Four modelling approaches, eight scores each.
+  Each score is explained fully on the next tab. The preferred model is highlighted:</p>
+
+  <table>
+    <tr><th>Model</th><th class="num">ROC-AUC</th><th class="num">Accuracy</th><th class="num">F1</th><th>Notes</th></tr>
+    <tr><td><strong>Decision Tree</strong> — preferred</td><td class="num">0.7680</td><td class="num">0.7172</td><td class="num">0.7049</td><td>Best separation</td></tr>
+    <tr><td>Gradient Boosting</td><td class="num">0.7653</td><td class="num">0.7074</td><td class="num">0.7046</td><td>Most sophisticated</td></tr>
+    <tr><td>Random Forest</td><td class="num">0.7598</td><td class="num">0.7184</td><td class="num">0.7044</td><td>Many trees combined</td></tr>
+    <tr><td>Logistic Regression</td><td class="num">0.7423</td><td class="num">0.7010</td><td class="num">0.6852</td><td>Simplest, most explainable</td></tr>
+  </table>
+
+  <p>All four land within 0.03 of each other, and a simple decision tree beats the most
+  sophisticated method. That is informative: it means the underlying relationship is close to a
+  simple four-way lookup on shipping mode, with no hidden complexity for a cleverer model to
+  find.</p>
+
+  <p><strong>The ablation chart.</strong> "Ablation" means removing something to see what
+  happens. Three bars:</p>
+  <table>
+    <tr><th>What the model can use</th><th class="num">Score</th><th>Reading</th></tr>
+    <tr><td>Shipping mode only</td><td class="num">0.7384</td><td>Nearly all the predictive power</td></tr>
+    <tr><td>All 37 features</td><td class="num">0.7680</td><td>Everything adds a little more</td></tr>
+    <tr><td>All 36 features <em>except</em> shipping mode</td><td class="num">0.5352</td><td>Barely better than a coin toss</td></tr>
+  </table>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>The model can meaningfully separate risky orders from safe ones, and virtually all of that
+  ability comes from the shipping method. The third bar also serves as a safety check: if the
+  model scored well <em>without</em> shipping mode, that would suggest some other outcome-revealing
+  column had slipped in. At 0.535, the screening is holding.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It tells you the prediction is trustworthy — built only on information available when the
+  decision is made — and that the factor driving it is one you control. A prediction based on
+  something you cannot change would be interesting but useless.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>A score of 0.768 is genuinely useful, not weak. Compare it against 0.500 for guessing,
+    not against 100%.</li>
+    <li>The "decision-support" use of the model — re-scoring an order under each shipping method
+    — produces a model-implied scenario, not a guarantee of what would happen.</li>
+    <li>7,754 cancelled order lines are excluded from training. They never shipped.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 6 — MODEL DIAGNOSTICS ===================== -->
+<section class="chapter" id="tab-diagnostics">
+  <div class="tab-kicker">Tab 6 of 12</div>
+  <h3 class="tab">Model Diagnostics</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>The previous tab said which model was chosen. This one examines how good it actually is, in
+  detail: what kinds of mistakes it makes, whether its probabilities can be trusted, and what
+  happens if you make it more or less cautious.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>Because a single accuracy figure hides the important question: <em>what kind of mistake does
+  it make, and which mistake costs more?</em> Missing a late order and raising a false alarm are
+  not equally expensive, and this page separates them.</p>
+
+  <figure>
+    <img src="screenshots/diagnostics.png" alt="The Model Diagnostics tab">
+    <figcaption><strong>The Model Diagnostics tab.</strong> ROC and precision-recall curves, with
+    the interactive threshold simulator below.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>A confusion matrix</strong> — four cards counting each type of correct and
+    incorrect prediction, with a table explaining what each costs.</li>
+    <li><strong>Two curves</strong> — ROC and precision-recall.</li>
+    <li><strong>A threshold simulator</strong> — a slider that updates eight measures live.</li>
+    <li><strong>Logistic regression diagnostics</strong> — eight statistical measures plus a
+    table of odds ratios.</li>
+    <li><strong>A multicollinearity (VIF) table.</strong></li>
+    <li><strong>A calibration section</strong> — a curve and a table.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+
+  <div class="callout plain">
+    <span class="label">In plain English: the four boxes</span>
+    <p>Every prediction falls into one of four boxes. Using the actual figures:</p>
+    <ul class="clean" style="margin-bottom:0">
+      <li><strong>True positive (11,577)</strong> — predicted late, and it was late. Correct, and
+      actionable: we can upgrade the shipping or warn the customer.</li>
+      <li><strong>True negative (13,003)</strong> — predicted on time, and it was. Correct, no
+      action needed.</li>
+      <li><strong>False positive (1,547)</strong> — predicted late, but it arrived on time. A
+      false alarm. We may have paid for a needless upgrade. Annoying, but the cost is known in
+      advance and bounded.</li>
+      <li><strong>False negative (8,145)</strong> — predicted on time, but it was late. The
+      expensive mistake: no warning was given, nothing was done, and the customer is surprised.</li>
+    </ul>
+  </div>
+
+  <p>The model is currently <em>cautious</em> about crying wolf: it is right 88% of the time when
+  it says "late" (precision 0.8821), but it only catches 59% of the orders that actually are late
+  (recall 0.5870). For a service business, where the unflagged late delivery is the costly one,
+  you would often want to catch more of them and accept more false alarms. The slider lets you do
+  exactly that.</p>
+
+  <table>
+    <tr><th style="width:34mm">Measure</th><th class="num" style="width:18mm">Value</th><th>Plain meaning</th></tr>
+    <tr><td>Accuracy</td><td class="num">0.7172</td><td>Share of all predictions that were correct. Misleading on its own.</td></tr>
+    <tr><td>Precision</td><td class="num">0.8821</td><td>When it says "late", how often is it right?</td></tr>
+    <tr><td>Recall / Sensitivity</td><td class="num">0.5870</td><td>Of all the genuinely late orders, how many did it catch?</td></tr>
+    <tr><td>F1 score</td><td class="num">0.7049</td><td>A single number balancing precision and recall.</td></tr>
+    <tr><td>ROC-AUC</td><td class="num">0.7680</td><td>How well it separates risky from safe orders. 0.5 is guessing.</td></tr>
+    <tr><td>PR-AUC</td><td class="num">0.8260</td><td>Similar, but focused on how well it finds the late orders specifically.</td></tr>
+    <tr><td>Brier score</td><td class="num">0.1776</td><td>How accurate its probabilities are. Lower is better.</td></tr>
+    <tr><td>Youden's J</td><td class="num">0.4826</td><td>A balance measure, best at a cut-off of 0.71.</td></tr>
+  </table>
+
+  <p><strong>The two curves.</strong> On the ROC curve, the line bows toward the top-left corner;
+  the further from the diagonal dashed line, the better. The dashed line is what pure guessing
+  would look like. On the precision-recall curve, the trade-off is visible directly: catching
+  more late orders (moving right) means more false alarms (the line falls).</p>
+
+  <p><strong>The threshold slider.</strong> The model outputs a probability, and the threshold is
+  the cut-off at which you call an order "risky". Lower it to catch more late orders at the cost
+  of more false alarms; raise it to act only on the clearest cases. Drag it and all eight
+  measures update instantly.</p>
+
+  <div class="callout watch">
+    <span class="label">Watch out for</span>
+    <p>The page reports Youden's J, which suggests a cut-off of 0.71. That measure treats a false
+    alarm and a missed late order as equally bad — which they are not. The economically justified
+    cut-off comes from the cost model on the Decision Optimization tab, not from this statistic.</p>
+  </div>
+
+  <p><strong>Odds ratios.</strong> An odds ratio above 1 means higher odds of late delivery than
+  the reference category; below 1 means lower. So an odds ratio of 2.0 for a shipping method
+  means roughly double the odds of lateness compared with the baseline method.</p>
+
+  <p><strong>VIF (multicollinearity).</strong> This checks whether two predictors are telling the
+  model the same thing. Four predictors are flagged here, and that is expected: the promised
+  delivery window is completely determined by the shipping method, so the two are effectively the
+  same variable. The application keeps only shipping mode in the predictive model for this
+  reason.</p>
+
+  <p><strong>Calibration.</strong> This asks whether the probabilities mean what they say — if
+  the model says "70% likely to be late" for a group of orders, did about 70% of them arrive
+  late? Points near the diagonal line mean yes. This matters because the decision engine
+  multiplies these probabilities by money.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>The model is reliable enough to base decisions on, and its probabilities are reasonably
+  well-calibrated. Its main weakness is that at the default cut-off it misses about four in ten
+  genuinely late orders — a choice you can change with the slider.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It converts a technical question into a business one. Rather than asking "is the model
+  good?", you can ask "how many late deliveries are we willing to miss in order to avoid a given
+  number of unnecessary upgrades?" — and set the cut-off accordingly.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>All figures come from held-out data the model never saw during training.</li>
+    <li>There is no single "correct" threshold. It depends on the relative cost of the two
+    mistakes, which is a business judgement.</li>
+    <li>Odds ratios describe association within the model, not proven cause.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 7 — RISK DRIVERS ===================== -->
+<section class="chapter" id="tab-drivers">
+  <div class="tab-kicker">Tab 7 of 12</div>
+  <h3 class="tab">Risk Drivers</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>This page opens up the model and shows which pieces of information it actually relies on
+  when predicting delay. It measures this three different ways, then translates each finding into
+  business language with a suggested action.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>A prediction nobody can explain is hard to act on and harder to defend. This tab answers
+  <em>why</em> the model thinks an order is risky — which is what turns a score into something a
+  manager can do something about.</p>
+
+  <figure>
+    <img src="screenshots/risk_drivers.png" alt="The Risk Drivers tab">
+    <figcaption><strong>The Risk Drivers tab.</strong> Permutation importance ranking, with the
+    interpretation panel beside it.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>A permutation importance chart</strong> ranking the top factors.</li>
+    <li><strong>Three smaller charts</strong> comparing three different ways of measuring
+    importance.</li>
+    <li><strong>Business interpretation blocks</strong> for the top ten drivers, each with a
+    statistical reading, a business reading and a suggested action.</li>
+    <li><strong>A four-panel section</strong> distinguishing association, prediction, causation
+    and decision scenario.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+
+  <div class="callout plain">
+    <span class="label">In plain English: permutation importance</span>
+    <p>To test whether a piece of information matters, scramble it — shuffle that column randomly
+    so it becomes meaningless — and see how much worse the model gets. If performance collapses,
+    that information was doing real work. If nothing changes, it was not.</p>
+    <p>It is the equivalent of removing one ingredient from a recipe to find out whether anyone
+    notices.</p>
+  </div>
+
+  <p>The actual ranking:</p>
+  <table>
+    <tr><th>Rank</th><th style="width:40mm">Factor</th><th class="num" style="width:20mm">Importance</th><th>Reading</th></tr>
+    <tr><td>1</td><td><code>Shipping Mode</code></td><td class="num">0.2665</td><td>By far the largest. Scrambling it damages the model badly.</td></tr>
+    <tr><td>2</td><td><code>order_hour</code></td><td class="num">0.0493</td><td>Hour of day the order was placed. Five times smaller, but clearly above the rest.</td></tr>
+    <tr><td>3</td><td><code>Order Country</code></td><td class="num">0.0008</td><td>Effectively zero.</td></tr>
+    <tr><td>4</td><td><code>Customer City</code></td><td class="num">0.0007</td><td>Effectively zero.</td></tr>
+    <tr><td>5</td><td><code>Customer Segment</code></td><td class="num">0.0006</td><td>Effectively zero.</td></tr>
+  </table>
+
+  <p>The pattern is one dominant driver, one small secondary one, and then a cliff. Everything
+  from third place down is within rounding distance of zero.</p>
+
+  <div class="callout">
+    <span class="label">About that second place</span>
+    <p><code>order_hour</code> is the hour of day the order was placed. It is worth being precise:
+    it is not zero, but it is five times smaller than shipping mode. The most likely explanation
+    is that it acts as a partial stand-in for the shipping method — if the mix of shipping methods
+    varies by time of day, then knowing the hour tells the model a little about which method was
+    used. It was not one of the 18 factors put through a formal statistical test.</p>
+  </div>
+
+  <p><strong>Three measures compared.</strong> The three smaller charts use different methods,
+  each with different blind spots — one favours factors with many categories, another only sees
+  straight-line relationships. When all three agree, as they do here, the finding is a property
+  of the data rather than a quirk of one technique.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>Delivery delay risk in this dataset is driven overwhelmingly by the shipping method chosen.
+  Destination country, city, customer type, product category, order size and network load carry
+  essentially no usable signal. This agrees with the Statistical Tests tab, which reached the same
+  conclusion by a completely different route.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It says where to invest attention and, just as usefully, where not to. A near-zero importance
+  is a real result: it means building destination-level or product-level delay forecasting would
+  not pay for itself here.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li><strong>An important predictor is not a proven cause.</strong> Shipping mode predicts
+    lateness; that does not prove changing it would change the outcome.</li>
+    <li>The four panels at the bottom of the page set out this distinction explicitly:
+    association, model prediction, causation, and decision scenario are four different things.</li>
+    <li>Importance is measured on data the model never saw, so it cannot be inflated by the model
+    simply memorising the training set.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 8 — SHIPPING MODE ===================== -->
+<section class="chapter" id="tab-shipping">
+  <div class="tab-kicker">Tab 8 of 12</div>
+  <h3 class="tab">Shipping Mode</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>This page examines the one thing management can actually change. It compares all four
+  shipping methods on delivery performance, speed and profitability, and explains what really
+  drives the differences between them.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>Everything so far has pointed here. If shipping mode is the dominant driver and the only
+  controllable one, we need to understand precisely how the four options differ before we can
+  decide between them.</p>
+
+  <figure>
+    <img src="screenshots/shipping_mode.png" alt="The Shipping Mode tab">
+    <figcaption><strong>The Shipping Mode tab.</strong> The four-mode comparison table, followed
+    by the promised-versus-actual analysis.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>A mode profile table</strong> — for each method: order count, share, late rate,
+    days promised, days actually taken, and profit.</li>
+    <li><strong>The central finding section</strong> — a chart and analysis of promise versus
+    performance.</li>
+    <li><strong>A trade-off chart</strong> plotting late rate against speed.</li>
+    <li><strong>A profit-by-mode chart.</strong></li>
+    <li><strong>A segment comparison</strong> with a drop-down for market, region, segment or
+    department.</li>
+    <li><strong>An economic outcome section</strong> comparing profit on late versus on-time
+    orders.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>The mode profile table is the heart of the page. The two columns to compare are
+  <em>promised days</em> and <em>actual transit</em>:</p>
+
+  <table>
+    <tr><th>Shipping method</th><th class="num">Orders</th><th class="num">Promised</th><th class="num">Actual</th><th class="num">Late rate</th></tr>
+    <tr><td>Standard Class</td><td class="num">37,632</td><td class="num">4 days</td><td class="num">3.99 days</td><td class="num">39.9%</td></tr>
+    <tr><td>Second Class</td><td class="num">12,256</td><td class="num">2 days</td><td class="num">4.00 days</td><td class="num">80.0%</td></tr>
+    <tr><td>First Class</td><td class="num">9,602</td><td class="num">1 day</td><td class="num">2.00 days</td><td class="num">100.0%</td></tr>
+    <tr><td>Same Day</td><td class="num">3,407</td><td class="num">0 days</td><td class="num">0.48 days</td><td class="num">48.4%</td></tr>
+  </table>
+
+  <div class="callout">
+    <span class="label">The central finding</span>
+    <p>Look at Standard Class and Second Class. They take <strong>the same time</strong> to
+    deliver — 3.99 days versus 4.00 days, a difference of eight thousandths of a day. Yet Standard
+    Class is late 39.9% of the time and Second Class 80.0% of the time.</p>
+    <p>The entire 40-point gap comes from the promise. Standard Class promises four days and
+    takes four. Second Class promises two days and also takes four. Same operation, tighter
+    promise, twice as many broken promises.</p>
+    <p>First Class is the extreme case: it promises one day and always takes exactly two, so it
+    is late 100% of the time. It is not slow — it is the second-fastest method — it is simply
+    over-promised.</p>
+  </div>
+
+  <p><strong>The trade-off chart</strong> plots each method with speed on one axis and late rate
+  on the other. Standard Class is the slowest but the most reliable against its own promise; Same
+  Day is eight times faster but breaks its promise more often. Neither is best on both counts,
+  which is exactly why a cost model is needed.</p>
+
+  <div class="callout watch">
+    <span class="label">Watch out for</span>
+    <p>Do not assume the method with the lowest late rate is automatically the best. Standard
+    Class wins on reliability precisely because it promises the least. And a customer who wants
+    goods tomorrow is not served by a four-day delivery that arrives "on time".</p>
+  </div>
+
+  <p><strong>The economic section</strong> reports something important: profit on late orders and
+  profit on on-time orders are almost identical. The correlation between lateness and profit is
+  −0.0056, which is effectively zero.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>Two things. First, the delay problem here is a promise-setting problem, not a logistics
+  problem — the goods move at the speed they move, and what varies is what was committed to.
+  Second, because late delivery has no measurable effect on profit in this data, the cost of a
+  late delivery cannot be calculated from the data and must be supplied as an assumption.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It surfaces a genuinely cheap intervention. Re-setting the Second Class promise to match
+  Standard Class would be expected to bring its late rate down to roughly the Standard Class
+  level, affecting 12,256 orders, without changing a single carrier, route or cost. That is a
+  commitment decision, not a logistics investment.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>The estimated effect of re-promising assumes transit times stay the same. That holds in
+    this data, but it is an assumption.</li>
+    <li>A shorter promise has commercial value to customers that this dataset cannot measure.
+    Lengthening it is not free in business terms, even though it is free operationally.</li>
+    <li>Levels with fewer than 200 orders are excluded from the segment chart, because small
+    samples produce unreliable percentages.</li>
+    <li>Profit differences between modes are descriptive. They do not prove that a mode causes
+    higher or lower profit.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 9 — DECISION OPTIMIZATION ===================== -->
+<section class="chapter" id="tab-decision">
+  <div class="tab-kicker">Tab 9 of 12</div>
+  <h3 class="tab">Decision Optimization</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>This is where prediction becomes decision. It puts a money figure on each shipping option
+  for an order, adds up the total expected cost of each, and recommends the cheapest. You set the
+  cost assumptions yourself with sliders, and everything recalculates as you move them.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>Knowing an order is likely to be late does not tell you what to do. Upgrading costs money;
+  not upgrading risks an unhappy customer. This page prices both sides so the choice can be made
+  on evidence rather than instinct.</p>
+
+  <div class="callout assume">
+    <span class="label">Scenario assumptions — not observed values</span>
+    <p><strong>The dataset contains no shipping-cost information whatsoever.</strong> There are no
+    freight charges, no carrier invoices, no logistics-cost fields of any kind. Total logistics
+    cost therefore cannot be measured from this data.</p>
+    <p>Every money figure on this page is an assumption <em>you</em> set, and the application
+    labels it as such wherever it appears. This is deliberate: inventing plausible-looking
+    shipping costs and presenting them as findings would be dishonest. Instead the page shows you
+    how the answer changes as the assumptions change.</p>
+  </div>
+
+  <figure>
+    <img src="screenshots/decision.png" alt="The Decision Optimization tab">
+    <figcaption><strong>The Decision Optimization tab.</strong> The shipping-mode decision engine
+    and the policy comparison, both recalculating live as the assumption sliders move.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>An assumptions panel</strong> on the left with sliders for freight cost per
+    method, the cost of a late delivery, holding cost, and the value of faster delivery — plus
+    three preset buttons (low, medium and high delay cost).</li>
+    <li><strong>The cost formula</strong>, written out with each component colour-coded as either
+    a model output or an assumption.</li>
+    <li><strong>A degeneracy demonstration</strong> — two charts showing what happens with and
+    without the time-related cost terms.</li>
+    <li><strong>The decision engine table</strong> — expected cost broken into components for all
+    four methods.</li>
+    <li><strong>A policy comparison</strong> of five different shipping strategies.</li>
+    <li><strong>Break-even analysis</strong> for each upgrade step.</li>
+    <li><strong>Three sensitivity charts.</strong></li>
+    <li><strong>A risk/value matrix</strong> sorting orders into four action groups.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+
+  <div class="callout plain">
+    <span class="label">In plain English: expected cost</span>
+    <p>"Expected cost" means the average cost you would pay if you made the same decision many
+    times. If a late delivery costs £100 and there is a 30% chance of being late, the expected
+    cost of lateness is £30 — not because you ever pay exactly £30, but because that is what it
+    averages out to across many orders.</p>
+  </div>
+
+  <p>The formula adds four things together for each shipping method:</p>
+  <table>
+    <tr><th style="width:44mm">Component</th><th>What it represents</th></tr>
+    <tr><td>Freight cost</td><td>What that method costs to buy. <em>Your assumption.</em></td></tr>
+    <tr><td>Expected delay cost</td><td>The chance of being late (from the model) multiplied by
+      what a late delivery costs. <em>Model output × your assumption.</em></td></tr>
+    <tr><td>Holding cost</td><td>The cost of capital tied up in goods while they are in transit.
+      <em>Your assumption.</em></td></tr>
+    <tr><td>Speed cost</td><td>The business value given up for each extra day in transit.
+      <em>Your assumption.</em></td></tr>
+  </table>
+
+  <div class="callout">
+    <span class="label">Why the last two components exist</span>
+    <p>A natural way to write this would be just <em>freight + chance of late × cost of late</em>.
+    On this dataset that produces a useless answer. Standard Class has both the lowest assumed
+    freight cost <em>and</em> the lowest late rate, so it wins for every single order no matter
+    what numbers you put in — the optimisation answers itself before it starts. The page
+    demonstrates this: with the time terms removed, Standard Class takes <strong>99.8%</strong> of
+    orders.</p>
+    <p>What that simple formula misses is that faster methods genuinely deliver sooner even when
+    they miss their promise. Same Day averages half a day in transit against Standard Class's four
+    days. The holding and speed terms put a value on that, which restores a real trade-off — one
+    that depends on the individual order.</p>
+    <p>You can see this for yourself: set both time sliders to zero and watch the recommendation
+    collapse onto a single method.</p>
+  </div>
+
+  <p><strong>The decision engine table</strong> shows each method with its cost broken into those
+  four parts, plus the total. The cheapest is highlighted, and the others show how much more they
+  would cost.</p>
+
+  <p><strong>The policy comparison</strong> tests five ways of running the shipping operation.
+  Under the default assumptions:</p>
+  <table>
+    <tr><th>Policy</th><th class="num">Cost per order</th><th class="num">Expected late rate</th><th class="num">Saving</th></tr>
+    <tr><td><strong>D — Risk-based assignment</strong></td><td class="num">$42.01</td><td class="num">20.0%</td><td class="num">12.35%</td></tr>
+    <tr><td>E — Risk + segment policy</td><td class="num">$47.66</td><td class="num">43.1%</td><td class="num">0.55%</td></tr>
+    <tr><td>C — Region-specific policy</td><td class="num">$47.68</td><td class="num">43.1%</td><td class="num">0.51%</td></tr>
+    <tr><td>A — Single mode for everything</td><td class="num">$47.92</td><td class="num">39.6%</td><td class="num">—</td></tr>
+    <tr><td>B — Market-specific policy</td><td class="num">$47.92</td><td class="num">39.6%</td><td class="num">0.00%</td></tr>
+  </table>
+
+  <p>Policy D — choosing per order based on its risk and value — is both the cheapest and the
+  most reliable. Note that market- and region-specific policies barely help, which is consistent
+  with everything the earlier tabs found about geography.</p>
+
+  <p><strong>Break-even analysis</strong> answers: how likely would a delay have to be before
+  upgrading pays for itself? If the actual chance of delay is above the break-even point, the
+  upgrade is justified under your assumptions.</p>
+
+  <p><strong>Sensitivity charts</strong> vary one assumption at a time across a wide range and
+  mark the point where the recommendation flips. Where no flip occurs, the recommendation is
+  robust to that assumption.</p>
+
+  <p><strong>The risk/value matrix</strong> plots orders by predicted risk against economic
+  exposure, splitting them into four groups: <em>Prioritise</em> (high risk, high value),
+  <em>Watch/manage</em> (high risk, low value), <em>Protect</em> (low risk, high value) and
+  <em>Routine</em> (low risk, low value).</p>
+
+  <div class="callout watch">
+    <span class="label">On "logistics network design"</span>
+    <p>The business question mentions network design. This dataset cannot support the classic
+    version of that — deciding where to build warehouses — because it contains no warehouse,
+    distribution-centre, facility or carrier information, and only two origin locations. The page
+    states this explicitly and scopes the decision to <em>service</em>-network design: which
+    shipping method is used for which orders.</p>
+  </div>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>Under the default assumptions, assigning shipping method order by order, based on predicted
+  risk and order value, beats every fixed rule — about 12% cheaper than using one method for
+  everything, while roughly halving the expected late rate. The sensitivity charts show which
+  assumptions that conclusion depends on most.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It turns an argument into a calculation. Instead of debating whether faster shipping is
+  "worth it", you state what you believe a late delivery costs, and the page tells you what
+  follows. If colleagues disagree about the numbers, you can test both views in a minute.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Every currency figure is an assumption, not a measurement. Change the sliders and every
+    number changes.</li>
+    <li>The savings are modelled estimates under those assumptions, not a guarantee.</li>
+    <li>The model gives the probability of lateness; the assumptions give it a price. Both are
+    needed, and only the first comes from data.</li>
+    <li>Policy D requires the model to run inside the fulfilment process. That is an operational
+    cost the comparison does not include.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 10 — SIMULATOR ===================== -->
+<section class="chapter" id="tab-simulator">
+  <div class="tab-kicker">Tab 10 of 12</div>
+  <h3 class="tab">Simulator</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>An interactive tool for a single order. You describe an order using drop-downs and sliders,
+  and the application predicts its delay risk live, evaluates all four shipping methods for it,
+  and recommends one — with a plain-English explanation of why.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>Because managers think in terms of specific orders, not aggregate statistics. This is where
+  the whole analysis becomes usable: <em>this</em> order, going <em>there</em>, worth <em>this
+  much</em> — what should we do with it?</p>
+
+  <figure>
+    <img src="screenshots/simulator.png" alt="The Simulator tab">
+    <figcaption><strong>The Simulator tab.</strong> Order inputs on the left; live risk meter,
+    recommendation and manager guidance on the right.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>An order characteristics panel</strong> — shipping method, customer segment,
+    department, category, payment type, quantity, product price, order value, discount rate, and
+    destination market, region and country.</li>
+    <li><strong>A delivery promise control</strong>, locked to the shipping method by default with
+    an override checkbox.</li>
+    <li><strong>A cost assumptions panel</strong> with the same sliders and presets as Tab 9.</li>
+    <li><strong>A risk meter</strong> — a coloured bar showing the predicted probability, with a
+    Low/Medium/High label.</li>
+    <li><strong>Three result cards</strong> — recommended method, expected total cost, and
+    predicted order profit.</li>
+    <li><strong>A "What should the manager do?" panel</strong> listing the specific risk factors
+    for this order and a recommended action.</li>
+    <li><strong>A shipping-mode comparison table</strong> and two charts.</li>
+    <li><strong>A what-if analysis tool</strong> at the bottom.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>Only fields that would genuinely be known before shipping are offered as inputs. You will
+  not find "actual delivery date" here, because that would not exist at decision time.</p>
+
+  <p><strong>The risk meter</strong> fills from left to right and changes colour: green for low
+  risk, amber for medium, red for high. The percentage is the model's estimated probability that
+  this order arrives after its promised date.</p>
+
+  <p><strong>The comparison table</strong> shows all four methods for this same order, with cost
+  broken into components. The recommended row is highlighted; the others show how much extra they
+  would cost.</p>
+
+  <div class="callout plain">
+    <span class="label">The promise override — the most interesting control</span>
+    <p>By default the promised delivery window follows the shipping method automatically, because
+    in this dataset the two are locked together. Ticking "override the promise" unlocks it.</p>
+    <p>That models something quite different from changing the shipping method: it models changing
+    the <em>commitment</em> while leaving the operation untouched. It is the interactive version of
+    the central finding on Tab 8 — that Second Class and Standard Class are the same operation with
+    different promises.</p>
+  </div>
+
+  <p><strong>What-if analysis.</strong> Pick a variable, choose a different value, and press "Run
+  scenario". The result table shows the predicted risk before and after, the change in percentage
+  points, the change in expected cost, and whether the recommendation changes.</p>
+
+  <div class="callout watch">
+    <span class="label">Model-implied scenario, not a guaranteed outcome</span>
+    <p>The application labels every what-if result as a "model-implied scenario change", and that
+    wording matters. Changing a value and re-running tells you what the model expects for an order
+    with those characteristics. It does <strong>not</strong> tell you what would happen if you
+    actually made that change in the real world.</p>
+    <p>The difference: the model has learned that orders shipped a certain way tend to be late. It
+    has not learned that shipping a particular order that way <em>would make</em> it late. Only a
+    controlled experiment could establish that.</p>
+  </div>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>For any order you describe, it gives a risk estimate, a recommended shipping method under
+  your assumptions, and the reasoning behind it. Experimenting shows quickly that changing the
+  shipping method moves the prediction substantially, while changing the market or category moves
+  it barely at all — the headline finding, made tangible.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It is the tool a planner would actually use. It also makes the analysis persuasive: rather
+  than describing the finding that geography does not matter, you can change the destination in
+  front of an audience and let them watch the number stay put.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Results are model-implied scenarios, not guarantees.</li>
+    <li>Fields you leave alone are set to typical values from the data, so the order is always
+    complete and realistic.</li>
+    <li>Unusual combinations may fall outside anything in the historical data, where the model is
+    less reliable.</li>
+    <li>The cost figures depend on the assumption sliders, exactly as on Tab 9.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 11 — BUSINESS INSIGHTS ===================== -->
+<section class="chapter" id="tab-insights">
+  <div class="tab-kicker">Tab 11 of 12</div>
+  <h3 class="tab">Business Insights</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>The executive summary. It pulls the findings from every other tab into one page structured
+  around five questions: what is happening, why, where the risk is, what management should do,
+  and what it is worth.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>Because a senior audience will not click through twelve tabs. This page is what you would
+  put in front of a director who has five minutes — and it is generated from the computed results,
+  not written by hand, so it cannot drift out of line with the analysis.</p>
+
+  <figure>
+    <img src="screenshots/insights.png" alt="The Business Insights tab">
+    <figcaption><strong>The Business Insights tab.</strong> The executive summary, structured as
+    what is happening, why, and where the risk sits.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>"What is happening?"</strong> — headline figures with a one-line summary.</li>
+    <li><strong>"Why is it happening?"</strong> — the top model drivers, each marked as material
+    or not.</li>
+    <li><strong>"Where is the risk?"</strong> — the highest-risk shipping method, market, region,
+    category and customer segment.</li>
+    <li><strong>Segment dashboards</strong> — four charts pairing late rate with average profit.</li>
+    <li><strong>"What should management do?"</strong> — four recommendations, each tagged with the
+    kind of evidence behind it.</li>
+    <li><strong>"What is the economic implication?"</strong> — the assumptions and the modelled
+    impact.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>Read the tags on each recommendation carefully. They are not decoration — they tell you what
+  kind of claim is being made:</p>
+  <table>
+    <tr><th style="width:56mm">Tag</th><th>What it means</th></tr>
+    <tr><td>Observed transit distributions</td><td>Measured directly from the data. The strongest
+      kind of evidence here.</td></tr>
+    <tr><td>Held-out model performance</td><td>Based on how the model performed on data it had
+      never seen.</td></tr>
+    <tr><td>Modelled estimate under assumptions</td><td>Depends on the cost assumptions. Change
+      them and this changes.</td></tr>
+    <tr><td>Observed historical rates</td><td>What actually happened, described — not a prediction
+      or a causal claim.</td></tr>
+  </table>
+
+  <div class="callout watch">
+    <span class="label">Read the "where is the risk" section carefully</span>
+    <p>It lists the worst market, region and category — but the page immediately warns that only
+    the shipping-mode row is a real finding. The others sit within about a percentage point of the
+    overall rate and none survives statistical testing. They are shown for completeness, not as
+    targets for action.</p>
+  </div>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>The four recommendations are: re-set the Second Class delivery promise; adopt risk-based
+  shipping assignment; do <em>not</em> invest in destination- or product-level delay forecasting;
+  and review service commitments before changing routing. Notice that one of the four is a
+  recommendation to spend nothing — a useful finding in its own right.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It is the bridge from analysis to action. Each recommendation names what to do, what it is
+  expected to achieve, and how confident you can be — so a decision-maker can weigh them without
+  needing to interpret a single chart.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Everything is generated from the computed results, so it always matches the other tabs.</li>
+    <li>Recommendations are supported by evidence but do not guarantee outcomes.</li>
+    <li>The economic figures move with the assumption sliders on Tab 9.</li>
+  </ul>
+</section>
+
+<!-- ===================== TAB 12 — PRESENTATION MODE ===================== -->
+<section class="chapter" id="tab-presentation">
+  <div class="tab-kicker">Tab 12 of 12</div>
+  <h3 class="tab">Presentation Mode</h3>
+
+  <h4 class="q">A. What is this tab?</h4>
+  <p>A guided walkthrough of the entire project in twelve numbered steps, designed to be presented
+  from directly. Each step answers the same five questions in the same order, so the argument
+  builds consistently from the business problem to the final recommendation.</p>
+
+  <h4 class="q">B. Why do we need this tab?</h4>
+  <p>So that someone can understand the whole project without reading the code or clicking through
+  every tab. It is the page to have open when presenting.</p>
+
+  <figure>
+    <img src="screenshots/presentation.png" alt="Presentation Mode">
+    <figcaption><strong>Presentation Mode.</strong> Each step answers the same five questions:
+    what, why, result, business meaning, decision implication.</figcaption>
+  </figure>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <p>Twelve numbered panels, each with five labelled sections:</p>
+  <table>
+    <tr><th style="width:44mm">Question</th><th>What it covers</th></tr>
+    <tr><td>What are we analysing?</td><td>The subject of this step</td></tr>
+    <tr><td>Why this method?</td><td>Why this approach rather than another</td></tr>
+    <tr><td>Result</td><td>What was actually found, with the real figures</td></tr>
+    <tr><td>Business meaning</td><td>What a manager should take from it</td></tr>
+    <tr><td>Decision implication</td><td>What action it points toward</td></tr>
+  </table>
+
+  <p>The twelve steps run: business problem, the data, delivery performance, statistical
+  significance, model comparison, validation and leakage, risk drivers, the shipping-mode
+  trade-off, decision optimization, policy comparison and sensitivity, live demonstration, and
+  management recommendations.</p>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>Top to bottom, in order. The "Why this method?" line is the one most likely to be examined in
+  a viva — it is where the methodology is justified.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>It contains the same findings as the rest of the application, arranged as an argument rather
+  than as a set of tools.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It shows the reasoning, not just the conclusion. A recommendation is far easier to accept
+  when you can see how it was reached and what was ruled out along the way.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Step 11 points to the live demonstration. Have the Simulator and Decision Optimization
+    tabs open in other browser tabs before presenting.</li>
+    <li>The closing caveat about assumptions and causation is part of the argument, not a
+    disclaimer to skip.</li>
+  </ul>
+</section>
+
+<!-- ===================== PAGES 13-16 ===================== -->
+<section class="chapter" id="tab-pipeline">
+  <div class="tab-kicker">Supporting page 13 of 16</div>
+  <h3 class="tab">Pipeline</h3>
+  <p class="note" style="margin-top:-1mm">Reached from the "Pipeline" link in the top-right corner.</p>
+
+  <h4 class="q">A. What is this page?</h4>
+  <p>A single diagram showing all sixteen stages the analysis passes through, from the raw data
+  file to the final business decision, with a short description of what happened at each stage.</p>
+
+  <h4 class="q">B. Why do we need this page?</h4>
+  <p>It answers "what did you actually do?" in one screen. It also makes clear that the order of
+  operations was deliberate — cleaning before exploring, screening before modelling, validating
+  before deciding.</p>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <p>Sixteen numbered boxes connected by arrows: raw data, data quality, grain reconciliation,
+  EDA, feature engineering, leakage screening, train/test split, model training, cross validation,
+  model evaluation, statistical significance, interpretability, late-risk prediction,
+  shipping-mode scenario analysis, expected-cost optimization, and business decision.</p>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>Top to bottom. Each box names a stage and states what was actually done, including specific
+  figures such as the memory reduction from 350 MB to 17 MB.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>That the analysis followed a disciplined sequence in which each stage depends on the one
+  before it, rather than jumping straight to modelling.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It supports the credibility of the conclusions. It also gives a reviewer a map for asking
+  targeted questions about any single stage.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>It describes the process, not the findings — use it to explain method, not results.</li>
+    <li>Stages 6 and 7 (leakage screening and the grouped split) are the two that most affect how
+    trustworthy the final numbers are.</li>
+  </ul>
+</section>
+
+<section class="chapter" id="tab-governance">
+  <div class="tab-kicker">Supporting page 14 of 16</div>
+  <h3 class="tab">Governance</h3>
+
+  <h4 class="q">A. What is this page?</h4>
+  <p>An honest account of what this analysis cannot do. It lists the limitations, explains what
+  would need monitoring if the model were used in practice, and records the settings that make the
+  results reproducible.</p>
+
+  <h4 class="q">B. Why do we need this page?</h4>
+  <p>Every model has limits, and stating them openly is a mark of quality rather than weakness. In
+  an academic setting this is often the page that separates a careful project from an
+  overconfident one.</p>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <ul class="clean">
+    <li><strong>Limitations</strong> — two panels covering the data and inference constraints, and
+    what this dataset can and cannot answer.</li>
+    <li><strong>Model monitoring</strong> — seven measures to track in production, each with its
+    current baseline and what a change in it would mean.</li>
+    <li><strong>Reproducibility</strong> — the random seed, when the results were generated, the
+    split strategy and the chosen model.</li>
+  </ul>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>The most important limitation is stated plainly: <strong>the delay process in this dataset is
+  close to being determined entirely by the shipping method.</strong> With shipping mode removed,
+  all 36 remaining factors together score 0.535 against a chance level of 0.500.</p>
+
+  <div class="callout">
+    <span class="label">What this means for your conclusions</span>
+    <p>Conclusions about which factors drive delay describe <em>this dataset's structure</em>. They
+    should not be presented as a general finding that geography or product type never affect
+    delivery performance in the real world.</p>
+    <p>What does transfer is the method: screening out information that would not be available at
+    decision time, testing at the right level of aggregation, reporting effect sizes alongside
+    p-values, and pricing the reliability-versus-speed trade-off explicitly instead of just
+    minimising the late rate.</p>
+  </div>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>That the findings are solid within this dataset, and that the boundaries of what can be
+  claimed have been mapped rather than glossed over.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It prevents overreach. A manager reading this knows which recommendations rest on measurement
+  and which rest on assumption, and what would need watching if the model were deployed.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Reading this page before presenting means you will not be caught out by the obvious
+    challenge — you will have raised it first.</li>
+    <li>The privacy note is a real operational point: the source file contains customer names,
+    addresses and coordinates even though no model uses them.</li>
+  </ul>
+</section>
+
+<section class="chapter" id="tab-downloads">
+  <div class="tab-kicker">Supporting page 15 of 16</div>
+  <h3 class="tab">Downloads</h3>
+
+  <h4 class="q">A. What is this page?</h4>
+  <p>Nine buttons, each producing a spreadsheet file of results you can open in Excel.</p>
+
+  <h4 class="q">B. Why do we need this page?</h4>
+  <p>So results can leave the application — for an appendix, a slide, or someone who wants to
+  check a number themselves.</p>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <table>
+    <tr><th style="width:52mm">Export</th><th>Contents</th></tr>
+    <tr><td>Model comparison</td><td>All eight scores for each of the four models</td></tr>
+    <tr><td>Feature importance</td><td>All three importance measures</td></tr>
+    <tr><td>Statistical significance</td><td>Every test with statistic, p-value, effect size and interpretation</td></tr>
+    <tr><td>Shipping-mode economics</td><td>Orders, late rate, promised and actual transit, profit per method</td></tr>
+    <tr><td>Decision / scenario analysis</td><td>Policy comparison with costs and mode mix</td></tr>
+    <tr><td>Break-even analysis</td><td>The upgrade ladder with break-even probabilities</td></tr>
+    <tr><td>EDA summary</td><td>Late rate, order count and profit for every level of every dimension</td></tr>
+    <tr><td>Predictor availability</td><td>Every column, whether it was used, and why</td></tr>
+    <tr><td>Diagnostic report</td><td>Logistic coefficients, VIF and calibration</td></tr>
+  </table>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>Each file matches exactly what is displayed on the corresponding tab — they are generated
+  from the same stored results, so a downloaded figure can never disagree with the screen.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>Nothing new; it is a delivery mechanism for findings already presented.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It makes the analysis auditable. "Predictor availability" is the single most useful file to
+  have to hand, because it answers the common challenge of whether anything was quietly left out.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Downloads reflect the assumptions stored when the analysis was prepared, not any changes
+    you have just made with the sliders.</li>
+    <li>The files are plain CSV and open directly in Excel.</li>
+  </ul>
+</section>
+
+<section class="chapter" id="tab-upload">
+  <div class="tab-kicker">Supporting page 16 of 16</div>
+  <h3 class="tab">Upload</h3>
+
+  <h4 class="q">A. What is this page?</h4>
+  <p>A way to load a different data file and have the application check it before anything is run
+  on it.</p>
+
+  <h4 class="q">B. Why do we need this page?</h4>
+  <p>So the application is not permanently tied to one file. If a newer extract arrives, this page
+  checks it has the required structure before you rebuild the analysis.</p>
+
+  <h4 class="q">C. What do we see here?</h4>
+  <p>A file selector and a "Upload and validate" button. After uploading, a status list appears
+  confirming that the file loaded, the target was found, the decision variable was found, the
+  economic variables were found, and the leakage and personal-data screening completed. Any
+  problems are listed separately. The right-hand panel shows details of the currently loaded
+  dataset.</p>
+
+  <h4 class="q">D. How should I read it?</h4>
+  <p>Ticks are checks that passed. Anything in the "Issues found" box needs attention before the
+  data can be used — most often a missing required column.</p>
+
+  <h4 class="q">E. What does the result tell us?</h4>
+  <p>Whether a new file is structurally compatible. It does not analyse the file — the training
+  step must be re-run separately, as the page states.</p>
+
+  <h4 class="q">F. Why is this useful for management?</h4>
+  <p>It shows the analysis is repeatable on fresh data rather than a one-off exercise.</p>
+
+  <h4 class="q">G. Important things to remember</h4>
+  <ul class="clean">
+    <li>Uploading does not retrain anything. The training step must be re-run afterwards.</li>
+    <li>The application checks structure, not accuracy — it cannot tell whether the values are
+    correct.</li>
+  </ul>
+</section>
+
+<!-- ===================== GLOSSARY ===================== -->
+<section class="chapter" id="glossary">
+  <h2 class="part">4. Glossary of terms</h2>
+  <p class="lead">Every term below appears somewhere in the application. Each is given in three
+  parts: what it is, in plain words, and why it matters here.</p>
+
+  <table class="glossary">
+    <tr><th style="width:32mm">Term</th><th style="width:62mm">Simple meaning</th><th>Why it matters here</th></tr>
+
+    <tr><td>Late delivery risk</td><td>Whether an order arrived after the date promised. Yes or no.</td>
+      <td>The thing being predicted. 54.8% of orders were late.</td></tr>
+
+    <tr><td>Target variable</td><td>The thing a model is trying to predict.</td>
+      <td>Here it is late delivery risk.</td></tr>
+
+    <tr><td>Predictor / feature</td><td>A piece of information used to make the prediction.</td>
+      <td>37 are used, such as shipping method, destination and order value.</td></tr>
+
+    <tr><td>Classification</td><td>Sorting things into categories rather than predicting a number.</td>
+      <td>Sorting orders into "likely late" and "likely on time".</td></tr>
+
+    <tr><td>Regression</td><td>Predicting a number rather than a category.</td>
+      <td>Used to estimate the profit of an order.</td></tr>
+
+    <tr><td>Grain</td><td>What one row of data represents.</td>
+      <td>Rows are order lines but deliveries are per order, so analysis runs at order level.</td></tr>
+
+    <tr><td>Training / test data</td><td>Data used to build the model, versus data held back to check it.</td>
+      <td>138,493 rows train it; 34,272 unseen rows test it.</td></tr>
+
+    <tr><td>Data leakage</td><td>Accidentally using information that would not be available when the decision is made.</td>
+      <td>Three columns reveal the answer and are excluded. Including them fakes 99% accuracy.</td></tr>
+
+    <tr><td>Probability</td><td>A number from 0 to 1 expressing how likely something is.</td>
+      <td>The model outputs one per order; the decision engine multiplies it by cost.</td></tr>
+
+    <tr><td>Accuracy</td><td>Share of predictions that were correct.</td>
+      <td>0.7172. Misleading alone — it hides which kind of error was made.</td></tr>
+
+    <tr><td>Precision</td><td>When the model says "late", how often it is right.</td>
+      <td>0.8821. High precision means few false alarms.</td></tr>
+
+    <tr><td>Recall (sensitivity)</td><td>Of all genuinely late orders, how many were caught.</td>
+      <td>0.5870. Low recall means late orders slip through unflagged.</td></tr>
+
+    <tr><td>Specificity</td><td>Of all on-time orders, how many were correctly left alone.</td>
+      <td>The mirror image of recall.</td></tr>
+
+    <tr><td>F1 score</td><td>A single number balancing precision and recall.</td>
+      <td>0.7049. Useful for comparing models at a glance.</td></tr>
+
+    <tr><td>Confusion matrix</td><td>A count of the four possible outcomes: correct and incorrect, each way.</td>
+      <td>Separates false alarms (1,547) from missed late orders (8,145).</td></tr>
+
+    <tr><td>False positive</td><td>Predicted late but arrived on time — a false alarm.</td>
+      <td>Costs an unnecessary upgrade. Bounded and known in advance.</td></tr>
+
+    <tr><td>False negative</td><td>Predicted on time but arrived late — a missed case.</td>
+      <td>The expensive error: no warning, no action, surprised customer.</td></tr>
+
+    <tr><td>ROC-AUC</td><td>How well the model separates risky from safe orders across all cut-offs. 0.5 is guessing.</td>
+      <td>0.7680, against 0.535 without shipping mode.</td></tr>
+
+    <tr><td>PR-AUC</td><td>Similar, but focused on how well it finds the late orders specifically.</td>
+      <td>0.8260. More informative when one outcome matters more.</td></tr>
+
+    <tr><td>Threshold</td><td>The probability cut-off at which an order is called "risky".</td>
+      <td>Adjustable on the slider. Lower catches more late orders but raises false alarms.</td></tr>
+
+    <tr><td>Youden's J</td><td>A statistic suggesting a balanced cut-off.</td>
+      <td>0.4826 at a cut-off of 0.71 — a diagnostic, not the business-optimal choice.</td></tr>
+
+    <tr><td>Calibration</td><td>Whether "70% likely" really does happen about 70% of the time.</td>
+      <td>Essential, because the decision engine turns probabilities into money.</td></tr>
+
+    <tr><td>Brier score</td><td>A single measure of how accurate the probabilities are. Lower is better.</td>
+      <td>0.1776.</td></tr>
+
+    <tr><td>P-value</td><td>The chance a difference this large could be a fluke. Below 0.05 is usually called significant.</td>
+      <td>Says whether a difference is real, not whether it is big enough to matter.</td></tr>
+
+    <tr><td>Statistical significance</td><td>The difference is probably not down to chance.</td>
+      <td>Only one of 18 factors reaches it: shipping mode.</td></tr>
+
+    <tr><td>Effect size</td><td>How big a difference is, in a way that does not grow with sample size.</td>
+      <td>The measure that actually matters commercially. Shipping mode scores 0.481; the rest are near zero.</td></tr>
+
+    <tr><td>Cramér's V</td><td>The particular effect size used for category comparisons. 0 means no association.</td>
+      <td>Lets factors be ranked by importance rather than by p-value.</td></tr>
+
+    <tr><td>Correlation</td><td>Whether two measures move together. From −1 to +1.</td>
+      <td>Lateness and profit correlate at −0.0056: essentially unrelated.</td></tr>
+
+    <tr><td>Feature importance</td><td>How much the model relies on each piece of information.</td>
+      <td>Shipping mode 0.2665; the next factor 0.0493; the rest near zero.</td></tr>
+
+    <tr><td>Permutation importance</td><td>Scramble one column and see how much worse the model gets.</td>
+      <td>Measured on unseen data, so it cannot reward memorisation.</td></tr>
+
+    <tr><td>Odds ratio</td><td>How much a factor multiplies the odds of an outcome. Above 1 raises them; below 1 lowers them.</td>
+      <td>Makes the statistical model readable in business terms.</td></tr>
+
+    <tr><td>VIF</td><td>Checks whether two predictors are telling the model the same thing.</td>
+      <td>Flags that the promised window and the shipping method are effectively one variable.</td></tr>
+
+    <tr><td>Expected cost</td><td>The average cost of a decision if you made it many times.</td>
+      <td>The basis of the whole decision engine.</td></tr>
+
+    <tr><td>Break-even point</td><td>The point at which two options cost the same.</td>
+      <td>Tells you how likely a delay must be before upgrading pays for itself.</td></tr>
+
+    <tr><td>Sensitivity analysis</td><td>Changing an assumption to see whether the answer changes.</td>
+      <td>Shows how robust the recommendation is to the numbers you cannot measure.</td></tr>
+
+    <tr><td>Scenario assumption</td><td>A number supplied by the analyst because the data does not contain it.</td>
+      <td>All cost figures. The dataset has no shipping-cost field at all.</td></tr>
+
+    <tr><td>Association</td><td>Two things tend to occur together.</td>
+      <td>What this analysis can demonstrate.</td></tr>
+
+    <tr><td>Causation</td><td>One thing actually makes the other happen.</td>
+      <td>What this analysis cannot demonstrate, because shipping methods were never randomly assigned.</td></tr>
+  </table>
+</section>
+
+<!-- ===================== HOW IT FITS ===================== -->
+<section class="chapter" id="fit">
+  <h2 class="part">5. How all the tabs fit together</h2>
+
+  <p class="lead">Each tab answers one question, and the questions build on each other. Read down
+  the table and you have the whole argument.</p>
+
+  <table>
+    <tr><th style="width:36mm">Application section</th><th style="width:56mm">Main question answered</th><th>Business purpose</th></tr>
+    <tr><td><strong>Home</strong></td><td>What is happening?</td><td>Understand the overall situation</td></tr>
+    <tr><td><strong>Data</strong></td><td>What information do we have?</td><td>Understand and trust the evidence</td></tr>
+    <tr><td><strong>EDA</strong></td><td>What patterns exist?</td><td>Discover where the delays are</td></tr>
+    <tr><td><strong>Statistical Tests</strong></td><td>Are those differences meaningful?</td><td>Validate the evidence, avoid chasing noise</td></tr>
+    <tr><td><strong>Classification</strong></td><td>Can we identify risky orders in advance?</td><td>Predict future risk honestly</td></tr>
+    <tr><td><strong>Model Diagnostics</strong></td><td>How good and how trustworthy is the model?</td><td>Know what kind of mistakes it makes</td></tr>
+    <tr><td><strong>Risk Drivers</strong></td><td>Why are some orders riskier?</td><td>Understand which factors matter</td></tr>
+    <tr><td><strong>Shipping Mode</strong></td><td>What can we actually change?</td><td>Identify the decision lever</td></tr>
+    <tr><td><strong>Decision Optimization</strong></td><td>What should we choose, and what is it worth?</td><td>Evaluate the trade-off and support the decision</td></tr>
+    <tr><td><strong>Simulator</strong></td><td>What happens for this particular order?</td><td>Explore scenarios order by order</td></tr>
+    <tr><td><strong>Business Insights</strong></td><td>What should management do?</td><td>Turn analysis into action</td></tr>
+    <tr><td><strong>Presentation Mode</strong></td><td>How does the whole argument hang together?</td><td>Explain the project end to end</td></tr>
+    <tr><td>Pipeline</td><td>What steps were followed?</td><td>Demonstrate a disciplined method</td></tr>
+    <tr><td>Governance</td><td>What are the limits of this analysis?</td><td>Set honest expectations</td></tr>
+    <tr><td>Downloads</td><td>How do I get the results out?</td><td>Make the findings auditable</td></tr>
+    <tr><td>Upload</td><td>Can this be repeated on new data?</td><td>Show the analysis is repeatable</td></tr>
+  </table>
+
+  <h4>The story in one paragraph</h4>
+  <p>More than half of all deliveries arrive later than promised. Looking for the cause, we find
+  that geography, product type, customer type and order size explain essentially none of it — the
+  differences between markets are around one percentage point and fail every statistical test. What
+  does explain it is the shipping method, which spans a 57-point range. Digging further, the reason
+  is not that some methods are slower: Second Class and Standard Class deliver in the same time,
+  but Second Class promises half as long, so it breaks its promise twice as often. That points to
+  two levers — re-setting delivery promises, which costs nothing operationally, and assigning
+  shipping methods order by order based on predicted risk and order value, which under our cost
+  assumptions is about 12% cheaper than a single fixed policy while roughly halving the expected
+  late rate.</p>
+</section>
+
+<!-- ===================== 5-MINUTE SCRIPT ===================== -->
+<section class="chapter" id="fiveminutes">
+  <h2 class="part">6. How to explain the application in 5 minutes</h2>
+
+  <p class="lead">A spoken script for a classroom presentation. Each step names the tab to have on
+  screen. The words are written to be said aloud, not read.</p>
+
+  <h4>Step 1 — The business problem <span class="note">(tab: Home)</span></h4>
+  <p>"Our question is: which factors predict delivery delays, and what shipping decision minimises
+  total supply chain cost under uncertainty?</p>
+  <p>More than half of this company's orders — 54.8% — arrive later than promised. But this
+  project is not just a prediction exercise. Predicting a late delivery is only useful if we can
+  do something about it, and if we know whether that something is worth the money. So we built
+  three connected pieces: we <strong>predict</strong> late delivery risk, we
+  <strong>decide</strong> the shipping mode, and we judge it on <strong>profit and expected
+  cost</strong>."</p>
+
+  <h4>Step 2 — The data <span class="note">(tab: Data)</span></h4>
+  <p>"We have three years of DataCo orders — 180,519 order lines, covering 65,752 actual
+  deliveries. That distinction matters: a customer buying two products creates two rows but one
+  delivery. So we analyse at order level, otherwise we would count a single late delivery several
+  times.</p>
+  <p>We removed four columns that were entirely empty or identical throughout, six that were exact
+  duplicates of other columns, and all personal data. There are no duplicate rows and very few
+  missing values."</p>
+
+  <h4>Step 3 — The evidence <span class="note">(tabs: EDA, then Statistical Tests)</span></h4>
+  <p>"Here is the late rate by market. Europe 55.0%, Pacific Asia 55.3%, LATAM 54.4%, USCA 54.8%,
+  Africa 54.1%. They are all the same. Same story for region, product category and customer
+  segment.</p>
+  <p>Now here is late rate by shipping mode: 38% to 95%. That is a 57-point spread.</p>
+  <p>We tested this formally — 18 factors, with corrections for testing many things at once.
+  <strong>Exactly one is significant: shipping mode</strong>, with a large effect size of 0.48.
+  Every other factor fails. And that is a strong result, because with 63,000 orders these tests
+  would detect even a small real difference. Finding nothing means there is essentially nothing to
+  find."</p>
+
+  <h4>Step 4 — The prediction <span class="note">(tabs: Classification, Model Diagnostics)</span></h4>
+  <p>"We trained four models and tested them on 34,272 orders they had never seen. The best scores
+  0.768, where 0.5 is a coin toss.</p>
+  <p>That number is lower than most published analyses of this dataset, which report around 99%.
+  The difference is deliberate. Three columns in this data reveal the answer — delivery status,
+  actual shipping days, and the shipping date. If you leave them in, the model is not predicting,
+  it is reading the answer. We excluded all three.</p>
+  <p>Here is our check: with shipping mode removed, every remaining factor together scores 0.535.
+  Barely above chance. That confirms both that the screening worked, and that shipping mode is
+  carrying essentially all the signal."</p>
+
+  <h4>Step 5 — The decision <span class="note">(tab: Shipping Mode)</span></h4>
+  <p>"So shipping mode is the driver, and conveniently it is also the one thing management
+  controls. But look at <em>why</em> it matters.</p>
+  <p>Standard Class promises four days and takes 3.99. Second Class promises two days and takes
+  4.00. <strong>Identical transit time.</strong> Yet Standard Class is late 40% of the time and
+  Second Class 80%.</p>
+  <p>The entire gap is the promise, not the operation. First Class is the extreme case: it always
+  takes exactly two days but promises one, so it is late 100% of the time. It is not slow, it is
+  over-promised.</p>
+  <p>That gives us a lever that costs nothing: re-set the Second Class promise to match Standard
+  Class, and its late rate should fall by around 40 points across 12,256 orders, without changing
+  a single carrier or route."</p>
+
+  <h4>Step 6 — The economics <span class="note">(tab: Decision Optimization)</span></h4>
+  <p>"Now the cost. And I want to be upfront: <strong>this dataset contains no shipping-cost data
+  at all.</strong> So rather than inventing freight costs and presenting them as findings, we built
+  a transparent model where every cost is an assumption you can change — and we show how far you
+  would have to move them before the answer changes.</p>
+  <p>Expected cost for each option is freight, plus the chance of being late multiplied by what
+  lateness costs, plus the cost of capital in transit, plus the value of the days saved.</p>
+  <p>One honest finding here: if you use only freight plus lateness cost — the obvious formula —
+  Standard Class wins for 99.8% of orders under any assumptions, because it is both the cheapest
+  and the most reliable. The optimisation answers itself. The reason is that a simple
+  late/on-time measure cannot see that Same Day delivers in half a day against Standard's four.
+  Adding the time terms restores a genuine trade-off."</p>
+
+  <h4>Step 7 — The recommendation <span class="note">(tab: Business Insights)</span></h4>
+  <p>"Three recommendations.</p>
+  <p><strong>First, re-set the Second Class delivery promise.</strong> Same operation, achievable
+  promise, around 40 points off its late rate at no operational cost. This is the strongest finding
+  because it rests on measured transit times, not assumptions.</p>
+  <p><strong>Second, assign shipping mode order by order</strong> based on predicted risk and order
+  value. Under our cost assumptions that is about 12% cheaper per order than a single fixed policy,
+  and roughly halves the expected late rate.</p>
+  <p><strong>Third, do not invest in destination- or product-level delay forecasting.</strong>
+  We tested for it three separate ways and the signal is not there. Knowing where not to spend is
+  worth as much as knowing where to spend.</p>
+  <p>Two caveats. The cost figures are assumptions, clearly labelled, and we show the sensitivity.
+  And because shipping methods were never randomly assigned, we can say shipping mode is strongly
+  <em>associated</em> with late delivery — we do not claim it causes it. That is why the
+  recommendation about re-setting promises is the strongest one: it rests on measured transit
+  times, not on a modelled counterfactual."</p>
+
+  <div class="callout plain">
+    <span class="label">If you have another two minutes: the live demo</span>
+    <p>Open the <strong>Simulator</strong>. Change the shipping mode and watch the risk meter move
+    sharply. Then change the destination market and watch it barely move — the headline finding,
+    demonstrated live.</p>
+    <p>Then open <strong>Decision Optimization</strong>, set both time sliders to zero, and watch
+    the recommendation collapse onto one shipping method. Raise the value of speed and watch it
+    flip back. That is uncertainty in the business question, made visible.</p>
+  </div>
+
+  <h4>Questions you should expect</h4>
+  <table>
+    <tr><th style="width:62mm">Question</th><th>Answer</th></tr>
+    <tr><td><em>"Only one significant variable? Did the analysis fail?"</em></td>
+      <td>No — three independent methods agree: the hypothesis tests, the model ablation, and
+      permutation importance. Finding one strong driver and ruling out sixteen others is a
+      result.</td></tr>
+    <tr><td><em>"Why is your accuracy lower than published results?"</em></td>
+      <td>Because we removed the three columns that reveal the answer. Those results are scoring
+      the outcome against itself.</td></tr>
+    <tr><td><em>"Why only 18 tests when the model has 37 features?"</em></td>
+      <td>Several features are alternative encodings of one factor, and some have too many
+      categories for a valid test. The ablation covers all 36 at once and finds 0.535.</td></tr>
+    <tr><td><em>"Where did the shipping costs come from?"</em></td>
+      <td>They are stated assumptions — the dataset has none. That is why the sensitivity analysis
+      exists.</td></tr>
+    <tr><td><em>"Does shipping mode cause delays?"</em></td>
+      <td>We cannot claim that. Assignment was not randomised, so we report association and
+      model-implied scenarios.</td></tr>
+  </table>
+</section>
+
+</body>
+</html>

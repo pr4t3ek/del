@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Pipeline &middot; {{ app_title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>Data science and decision pipeline</h2>
+  <p>Every stage from raw file to business decision, with what was actually done at each step.</p>
+</div>
+
+<section>
+  <div class="pipeline">
+    {% set stages = [
+      ('Raw data', 'DataCoSupplyChainDataset.csv - 180,519 order line items, 53 columns, ISO-8859-1 encoded, tracked with Git LFS.'),
+      ('Data quality', '4 zero-signal columns dropped, 6 exactly-duplicated column pairs collapsed, direct personal data removed, dates parsed, memory reduced from 350 MB to 17 MB.'),
+      ('Grain reconciliation', 'Line items aggregated to 65,752 orders. The delivery outcome is recorded once per order, so statistics run at order grain and the split is grouped on Order Id.'),
+      ('EDA', 'Delivery performance and economics across mode, geography, customer and product, plus the transit-time distributions that explain the mode differences.'),
+      ('Feature engineering', 'Calendar and cyclical features, network-load congestion proxy, great-circle distance, order-composition measures, top-N bucketing for high-cardinality categoricals.'),
+      ('Leakage and timing screen', 'Delivery Status, Days for shipping (real) and the shipping date excluded as outcome-derived; Days for shipment (scheduled) excluded as a perfect alias of Shipping Mode.'),
+      ('Train/test split', '80/20 grouped on Order Id so no order appears on both sides. A chronological split is available as a configuration option.'),
+      ('Model training', 'Logistic Regression, Decision Tree, Random Forest and Gradient Boosting, each inside one sklearn Pipeline with imputation, scaling and one-hot encoding fitted on training data only.'),
+      ('Cross validation', 'StratifiedGroupKFold on the training set, again grouped on Order Id.'),
+      ('Model evaluation', 'Accuracy, precision, recall, F1, ROC-AUC, PR-AUC, specificity, sensitivity, Brier and Youden J on held-out data, plus a feature ablation that doubles as a leakage check.'),
+      ('Statistical significance', 'Chi-square with Cramer\'s V and Mann-Whitney U with rank-biserial r at order grain, Benjamini-Hochberg corrected, reported with effect sizes.'),
+      ('Interpretability', 'Permutation importance on held-out data, tree importance, logistic odds ratios with confidence intervals, VIF and calibration.'),
+      ('Late-risk prediction', 'Calibrated probability of missing the promised date for any order, from decision-time information only.'),
+      ('Shipping-mode scenario analysis', 'Each order re-scored under all four modes to produce model-implied counterfactuals.'),
+      ('Expected-cost optimization', 'Transparent cost model with user-set assumptions, policy comparison, break-even ladder and sensitivity sweeps.'),
+      ('Business decision', 'A recommended shipping-mode policy with its stability region, and the promise-redesign lever the analysis surfaced.')
+    ] %}
+    {% for name, desc in stages %}
+      <div class="stage">
+        <span class="n">{{ loop.index }}</span><strong>{{ name }}</strong>
+        <div class="desc">{{ desc }}</div>
+      </div>
+      {% if not loop.last %}<div class="arrow">&#9660;</div>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

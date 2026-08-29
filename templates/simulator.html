@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Simulator &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set d = analytics.decision %}
+{% set a = d.assumptions %}
+
+<div class="page-head">
+  <h2>Delivery risk &amp; shipping decision simulator</h2>
+  <p>Enter an order's characteristics as they would be known at the moment the shipping-mode
+  decision is made. The model scores it live, evaluates every alternative mode, and recommends
+  one under your cost assumptions.</p>
+</div>
+
+<section>
+  <div class="grid sidebar">
+    <!-- ---------------- inputs ---------------- -->
+    <div>
+      <div class="card">
+        <h4>Order characteristics</h4>
+        <p class="hint">Only fields available before shipment are offered</p>
+
+        {% for group, label in [('decision', 'Shipping decision'), ('order', 'Order and product'), ('geography', 'Destination')] %}
+          <div class="name" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin:14px 0 6px">{{ label }}</div>
+          {% for f in fields if f.group == group %}
+            <label class="field"><span class="name">{{ f.label }}</span>
+              <select class="sim-input" data-field="{{ f.name }}">
+                {% for o in f.options %}<option value="{{ o }}"
+                  {% if o == cat_defaults.get(f.name) %}selected{% endif %}>{{ o }}</option>{% endfor %}
+              </select>
+            </label>
+          {% endfor %}
+          {% if group == 'order' %}
+            {% for f in numeric_fields %}
+              <label class="field"><span class="name">{{ f.label }}</span>
+                <div class="range-row">
+                  <input type="range" class="sim-input" data-field="{{ f.name }}"
+                         min="{{ f.min }}" max="{{ f.max }}" step="{{ f.step }}"
+                         value="{{ defaults.get(f.name, f.min) }}">
+                  <output></output>
+                </div>
+              </label>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+
+        <div class="name" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin:16px 0 6px">Delivery promise</div>
+        <label class="field"><span class="name">Promised days
+          <span id="promise-auto" class="badge mute">auto</span></span>
+          <div class="range-row">
+            <input type="range" id="promised-days" min="0" max="7" step="1" value="4" disabled>
+            <output id="promised-out">4</output>
+          </div>
+        </label>
+        <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted)">
+          <input type="checkbox" id="promise-override" style="width:auto">
+          Override the promise (promise-redesign scenario)
+        </label>
+        <p class="note" style="margin-top:7px">The promised window is a fixed lookup on the
+        shipping mode in this dataset, so it moves automatically. Unlocking it models a change
+        to the <em>commitment</em> rather than the operation &mdash; the lever identified on the
+        Shipping Mode page.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Cost assumptions</h4>
+        <p class="hint">Scenario assumptions, not observed values</p>
+        <div class="btn-row" style="margin-bottom:12px">
+          {% for key, p in d.presets.items() %}
+            <button class="secondary preset" data-preset="{{ key }}">{{ p.label }}</button>
+          {% endfor %}
+        </div>
+        <label class="field"><span class="name">Cost of a late delivery ($)</span>
+          <div class="range-row">
+            <input type="range" class="sim-assume" id="late_penalty_fixed" min="0" max="200" step="5" value="{{ a.late_penalty_fixed }}">
+            <output></output>
+          </div>
+        </label>
+        <label class="field"><span class="name">Share of order value at risk</span>
+          <div class="range-row">
+            <input type="range" class="sim-assume" id="late_penalty_rate" min="0" max="0.5" step="0.01" value="{{ a.late_penalty_rate }}">
+            <output></output>
+          </div>
+        </label>
+        <label class="field"><span class="name">Value of one day faster ($/day)</span>
+          <div class="range-row">
+            <input type="range" class="sim-assume" id="speed_value_per_day" min="0" max="40" step="0.5" value="{{ a.speed_value_per_day }}">
+            <output></output>
+          </div>
+        </label>
+        <label class="field"><span class="name">Holding cost per day (share of value)</span>
+          <div class="range-row">
+            <input type="range" class="sim-assume" id="holding_rate_per_day" min="0" max="0.01" step="0.0001" value="{{ a.holding_rate_per_day }}">
+            <output></output>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- ---------------- results ---------------- -->
+    <div>
+      <div class="card">
+        <div class="spread">
+          <h4 style="margin:0">Predicted late-delivery risk</h4>
+          <span id="risk-band" class="badge mute">&mdash;</span>
+        </div>
+        <div class="risk-meter">
+          <div class="track"><div class="fill low" id="risk-fill" style="width:0%">0%</div></div>
+        </div>
+        <div class="grid cols-3">
+          <div class="kpi"><div class="label">Recommended mode</div>
+            <div class="value" style="font-size:19px" id="rec-mode">&mdash;</div>
+            <div class="sub" id="rec-sub">under current assumptions</div></div>
+          <div class="kpi"><div class="label">Expected total cost</div>
+            <div class="value" style="font-size:19px" id="rec-cost">&mdash;</div>
+            <div class="sub" id="rec-saving">&nbsp;</div></div>
+          <div class="kpi"><div class="label">Predicted order profit</div>
+            <div class="value" style="font-size:19px" id="pred-profit">&mdash;</div>
+            <div class="sub">model estimate</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>What should the manager do?</h4>
+        <div id="risk-drivers"></div>
+        <div class="callout good" style="margin-top:12px" id="rec-action"></div>
+      </div>
+
+      <div class="card flush" style="margin-top:16px">
+        <h4>Shipping-mode comparison</h4>
+        <p class="hint">The same order scored under every mode &mdash;
+          <strong>model-implied scenario</strong>, not a causal prediction</p>
+        <div class="table-wrap"><table id="mode-table">
+          <thead><tr><th>Mode</th><th class="num">P(late)</th><th class="num">Freight</th>
+            <th class="num">Expected delay cost</th><th class="num">Holding</th>
+            <th class="num">Speed cost</th><th class="num">Expected total</th>
+            <th>Verdict</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card"><h4>Risk by mode</h4>
+          <div id="c-sim-risk" class="chart short"></div></div>
+        <div class="card"><h4>Expected total cost by mode</h4>
+          <div id="c-sim-cost" class="chart short"></div></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>What-if analysis</h4>
+        <p class="hint">Change one variable and compare against the current order</p>
+        <div class="grid cols-3" style="align-items:end">
+          <label class="field"><span class="name">Variable</span>
+            <select id="whatif-field">
+              {% for f in fields %}<option value="{{ f.name }}">{{ f.label }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field"><span class="name">Change to</span>
+            <select id="whatif-value"></select>
+          </label>
+          <label class="field"><span class="name">&nbsp;</span>
+            <button id="whatif-run">Run scenario</button>
+          </label>
+        </div>
+        <div id="whatif-result"></div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+<script>
+const FIELDS = {{ fields | tojson }};
+const MODE_PROFILE = {{ analytics.decision.mode_profile | tojson }};
+initSimulator(FIELDS, MODE_PROFILE);
+</script>
+{% endblock %}

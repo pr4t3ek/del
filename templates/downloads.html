@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Downloads &middot; {{ app_title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>Downloadable outputs</h2>
+  <p>Every export is generated from the same precomputed results the pages display, so a
+  downloaded file always matches what is on screen.</p>
+</div>
+
+<section>
+  <div class="grid cols-3">
+    {% set labels = {
+      'model_comparison': ('Model comparison', 'Accuracy, precision, recall, F1, ROC-AUC, PR-AUC, Brier and confusion matrix for all four models.'),
+      'feature_importance': ('Feature importance', 'Permutation, tree impurity and logistic coefficient importances.'),
+      'statistics': ('Statistical significance', 'Every test with statistic, p-value, effect size and business interpretation.'),
+      'shipping_mode': ('Shipping-mode economics', 'Orders, late rate, promised and actual transit, and profit per mode.'),
+      'decision': ('Decision / scenario analysis', 'Policy comparison with cost, late rate and mode mix.'),
+      'break_even': ('Break-even analysis', 'Upgrade ladder with break-even probabilities and verdicts.'),
+      'eda': ('EDA summary', 'Late rate, order count and profit for every level of every dimension.'),
+      'availability': ('Predictor availability', 'The leakage screen: every column, whether it was used, and why.'),
+      'diagnostics': ('Diagnostic report', 'Logistic coefficients, VIF and calibration bins.')
+    } %}
+    {% for key, (filename, _fn) in exports.items() %}
+      <div class="card">
+        <h4>{{ labels[key][0] if key in labels else key }}</h4>
+        <p class="hint">{{ labels[key][1] if key in labels else '' }}</p>
+        <a class="btn" href="{{ url_for('download', name=key) }}">Download CSV</a>
+        <div class="note" style="margin-top:8px"><span class="mono">{{ filename }}</span></div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

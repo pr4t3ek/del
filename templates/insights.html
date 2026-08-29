@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Business Insights &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set e = analytics.eda %}
+{% set w = summary.where %}
+
+<div class="page-head">
+  <h2>Executive summary</h2>
+  <p>Generated from the computed results. Observed history and modelled estimates are
+  labelled separately throughout.</p>
+</div>
+
+<section>
+  <h3>What is happening?</h3>
+  <div class="card">
+    <div class="grid cols-4">
+      <div class="kpi"><div class="label">Late delivery rate</div>
+        <div class="value">{{ summary.what.late_rate }}%</div>
+        <div class="sub">observed</div></div>
+      <div class="kpi"><div class="label">Orders analysed</div>
+        <div class="value">{{ '{:,}'.format(summary.what.n_orders) }}</div>
+        <div class="sub">{{ e.date_min }} to {{ e.date_max }}</div></div>
+      <div class="kpi"><div class="label">Worst mode</div>
+        <div class="value" style="font-size:17px">{{ w.worst_mode.level if w.worst_mode }}</div>
+        <div class="sub">{{ w.worst_mode.late_rate if w.worst_mode }}% late</div></div>
+      <div class="kpi"><div class="label">Best mode</div>
+        <div class="value" style="font-size:17px">{{ w.best_mode.level if w.best_mode }}</div>
+        <div class="sub">{{ w.best_mode.late_rate if w.best_mode }}% late</div></div>
+    </div>
+    <p style="margin-top:14px">{{ summary.what.headline }}</p>
+  </div>
+</section>
+
+<section>
+  <h3>Why is it happening?</h3>
+  <div class="grid sidebar">
+    <div class="card">
+      <h4>Top model drivers</h4>
+      <ol class="clean" style="padding-left:20px">
+        {% for d in summary.why.drivers %}
+        <li><strong>{{ d.name }}</strong>
+          <span class="badge {% if d.material %}warn{% else %}mute{% endif %}">{{ '%.4f'|format(d.importance) }}</span>
+          {% if not d.material %}<div class="note">no material contribution</div>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+    <div class="card">
+      <h4>Interpretation</h4>
+      <p>{{ summary.why.headline }}</p>
+      <div class="callout">
+        <p><strong>The delay is a promise problem, not a transit problem.</strong>
+        {% set pr = analytics.decision.promise_redesign %}
+        {% if pr.available %}{{ pr.finding }}{% endif %}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Where is the risk?</h3>
+  <div class="grid cols-3">
+    {% for label, row in [('Shipping mode', w.worst_mode), ('Market', w.worst_market),
+                          ('Order region', w.worst_region), ('Product category', w.worst_category),
+                          ('Customer segment', w.worst_segment)] %}
+      {% if row %}
+      <div class="card">
+        <h4>{{ label }}</h4>
+        <p class="hint">Highest late rate, minimum 200 orders</p>
+        <div class="spread">
+          <div><strong style="font-size:15px">{{ row.level }}</strong>
+            <div class="note">{{ '{:,}'.format(row.orders) }} orders</div></div>
+          <span class="badge {% if row.late_rate > 70 %}bad{% elif row.late_rate > 60 %}warn{% else %}mute{% endif %}">{{ row.late_rate }}%</span>
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="callout warn" style="margin-top:14px">
+    <p><strong>Only the shipping-mode row is a real finding.</strong> Market, region, category
+    and segment all sit within roughly a percentage point of the {{ e.late_rate }}% overall
+    rate, and none survives multiple-testing correction. They are shown for completeness, not
+    as targets for intervention.</p>
+  </div>
+</section>
+
+<section>
+  <h3>Segment dashboards</h3>
+  <div class="grid cols-2">
+    <div class="card"><h4>Shipping mode risk</h4><div id="c-seg-mode" class="chart"></div></div>
+    <div class="card"><h4>Market risk</h4><div id="c-seg-market" class="chart"></div></div>
+    <div class="card"><h4>Region risk</h4><div id="c-seg-region" class="chart"></div></div>
+    <div class="card"><h4>Product category risk</h4><div id="c-seg-category" class="chart"></div></div>
+  </div>
+</section>
+
+<section>
+  <h3>What should management do?</h3>
+  {% for a in summary.actions %}
+  <div class="card" style="margin-bottom:12px">
+    <div class="spread">
+      <h4 style="font-size:15px;margin:0">{{ loop.index }}. {{ a.title }}</h4>
+      <span class="badge {% if 'Observed' in a.basis %}info{% else %}warn{% endif %}">{{ a.basis }}</span>
+    </div>
+    <p style="margin:10px 0 0">{{ a.detail }}</p>
+  </div>
+  {% endfor %}
+</section>
+
+<section>
+  <h3>What is the economic implication?</h3>
+  {% set ec = summary.economics %}
+  <div class="grid sidebar">
+    <div class="card">
+      <h4>Current scenario assumptions</h4>
+      <div class="stat-row"><span class="k">Late penalty (fixed)</span>
+        <span class="v">${{ '%.0f'|format(ec.assumptions.late_penalty_fixed) }}</span></div>
+      <div class="stat-row"><span class="k">Share of value at risk</span>
+        <span class="v">{{ '%.0f'|format(100 * ec.assumptions.late_penalty_rate) }}%</span></div>
+      <div class="stat-row"><span class="k">Value of one day faster</span>
+        <span class="v">${{ '%.1f'|format(ec.assumptions.speed_value_per_day) }}</span></div>
+      <div class="stat-row"><span class="k">Holding rate per day</span>
+        <span class="v">{{ '%.2f'|format(100 * ec.assumptions.holding_rate_per_day) }}%</span></div>
+      {% for mode, cost in ec.assumptions.freight_cost.items() %}
+      <div class="stat-row"><span class="k">Freight &mdash; {{ mode }}</span>
+        <span class="v">${{ '%.0f'|format(cost) }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="card">
+      <h4>Modelled impact</h4>
+      {% if ec.best_policy and ec.baseline_policy %}
+      <div class="grid cols-3">
+        <div class="kpi"><div class="label">Best policy</div>
+          <div class="value" style="font-size:16px">{{ ec.best_policy.policy }}</div></div>
+        <div class="kpi"><div class="label">Cost per order</div>
+          <div class="value">${{ '%.2f'|format(ec.best_policy.avg_cost) }}</div>
+          <div class="sub">vs ${{ '%.2f'|format(ec.baseline_policy.avg_cost) }} baseline</div></div>
+        <div class="kpi"><div class="label">Expected late rate</div>
+          <div class="value">{{ '%.1f'|format(100 * ec.best_policy.expected_late_rate) }}%</div>
+          <div class="sub">vs {{ '%.1f'|format(100 * ec.baseline_policy.expected_late_rate) }}% baseline</div></div>
+      </div>
+      {% endif %}
+      <div class="callout assumption" style="margin-top:14px"><p>{{ ec.caveat }}</p></div>
+      <p class="note" style="margin-top:10px">Adjust the assumptions on the
+      <a href="{{ url_for('decision_page') }}">Decision Optimization</a> page to see how far
+      these conclusions hold.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EDA = {{ analytics.eda | tojson }};
+function segChart(id, dim, n) {
+  const rows = (EDA.target_by[dim] || []).filter(r => r.orders >= 200)
+                 .sort((a, b) => b.late_rate - a.late_rate).slice(0, n || 10);
+  groupedBar(id, rows.map(r => r.level), [
+    { name: 'Late rate (%)',  values: rows.map(r => r.late_rate), color: PALETTE.red, suffix: '%' },
+    { name: 'Avg profit ($)', values: rows.map(r => r.avg_profit), color: PALETTE.teal }
+  ], { height: 330 });
+}
+segChart('c-seg-mode', 'Shipping Mode');
+segChart('c-seg-market', 'Market');
+segChart('c-seg-region', 'Order Region', 12);
+segChart('c-seg-category', 'Category Name', 12);
+</script>
+{% endblock %}

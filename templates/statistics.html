@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Statistical Tests &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set s = analytics.statistics %}
+
+<div class="page-head">
+  <h2>Statistical significance</h2>
+  <p>The business question asks which factors <em>significantly</em> predict delivery delays.
+  This page tests that formally, rather than inferring it from model importances.</p>
+</div>
+
+<section>
+  <div class="grid cols-4">
+    <div class="kpi"><div class="label">Tests run</div><div class="value">{{ s.n_tests }}</div>
+      <div class="sub">decision-time factors</div></div>
+    <div class="kpi"><div class="label">Significant</div><div class="value">{{ s.n_significant }}</div>
+      <div class="sub">after {{ s.correction }}</div></div>
+    <div class="kpi"><div class="label">Materially significant</div>
+      <div class="value">{{ s.n_material }}</div><div class="sub">effect size &ge; 0.10</div></div>
+    <div class="kpi"><div class="label">Sample</div>
+      <div class="value">{{ '{:,}'.format(s.n_orders) }}</div><div class="sub">orders tested</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="callout">
+    <p><strong>Method.</strong> {{ s.note }}</p>
+    <p>Significance level &alpha; = {{ s.alpha }}. Because {{ s.n_tests }} tests are run on one
+    dataset, p-values are corrected with the {{ s.correction }} procedure to control the false
+    discovery rate. Numeric factors use Mann-Whitney U rather than a t-test: order value,
+    profit and discount are heavily skewed, so the normality assumption does not hold.</p>
+  </div>
+</section>
+
+<section>
+  <h3>Effect size, not just p-value</h3>
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>Effect size by factor</h4>
+      <p class="hint">Cramer's V for categorical factors, rank-biserial r for numeric</p>
+      <div id="c-effects" class="chart tall"></div>
+    </div>
+    <div class="card">
+      <h4>Why the ranking is by effect size</h4>
+      <p>At {{ '{:,}'.format(s.n_orders) }} observations, a hypothesis test detects differences
+      far smaller than anything a planner could act on. A p-value answers "is this difference
+      distinguishable from zero?", not "is it big enough to matter?"</p>
+      <p>The table below reports both. Read the effect-size column first: a factor with
+      p &lt; 0.001 and Cramer's V of 0.02 is a statistically real but operationally
+      irrelevant difference.</p>
+      <div class="callout" style="margin-top:14px">
+        <p><strong>Result.</strong> Of {{ s.n_tests }} decision-time factors tested,
+        {{ s.n_significant }} survive correction and {{ s.n_material }} reach an effect size
+        of 0.10 or above.
+        {% set top = s.results[0] %}
+        <span class="mono">{{ top.factor }}</span> is the only material driver
+        ({{ top.effect_name }} = {{ '%.3f'|format(top.effect_size) }},
+        {{ top.effect_label|lower }}). Market, region, country, category, department,
+        customer segment, order value, quantity, discount and network load are all
+        negligible.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Test results</h3>
+  <div class="card flush">
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Factor</th><th>Test</th><th class="num">Statistic</th><th class="num">df</th>
+        <th class="num">P-value</th><th class="num">Effect size</th><th>Magnitude</th>
+        <th>Significant?</th><th>Business interpretation</th>
+      </tr></thead>
+      <tbody>
+      {% for r in s.results %}
+        <tr>
+          <td><strong>{{ r.factor }}</strong></td>
+          <td style="font-size:12px">{{ r.test }}</td>
+          <td class="num">{{ '{:,.1f}'.format(r.statistic) }}</td>
+          <td class="num">{{ r.dof if r.dof is not none else '&mdash;'|safe }}</td>
+          <td class="num">{{ r.p_display }}</td>
+          <td class="num">{{ '%.4f'|format(r.effect_size) }}</td>
+          <td><span class="badge {% if r.effect_size >= 0.20 %}bad{% elif r.effect_size >= 0.10 %}warn{% else %}mute{% endif %}">{{ r.effect_label }}</span></td>
+          <td>{% if r.significant %}<span class="badge good">Yes</span>{% else %}<span class="badge mute">No</span>{% endif %}</td>
+          <td class="wrap" style="font-size:12.5px">{{ r.business }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <h3>Hypotheses tested</h3>
+  <div class="card flush">
+    <div class="table-wrap scroll-y"><table class="compact">
+      <thead><tr><th>Factor</th><th>Null hypothesis</th><th>Alternative hypothesis</th><th>Detail</th></tr></thead>
+      <tbody>
+      {% for r in s.results %}
+        <tr><td class="mono" style="font-size:12px">{{ r.factor }}</td>
+            <td class="wrap" style="font-size:12.5px">{{ r.h0 }}</td>
+            <td class="wrap" style="font-size:12.5px">{{ r.h1 }}</td>
+            <td class="wrap" style="font-size:12.5px">{{ r.detail }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+{% if s.mechanism %}
+<section>
+  <h3>Mechanism test &mdash; reported separately</h3>
+  <div class="card">
+    <h4>{{ s.mechanism.factor }}</h4>
+    <p class="hint">{{ s.mechanism.test }} &middot; H = {{ s.mechanism.statistic }},
+      df = {{ s.mechanism.dof }}, p {{ s.mechanism.p_display }},
+      epsilon-squared = {{ '%.4f'|format(s.mechanism.effect_size) }}</p>
+    <p>{{ s.mechanism.business }}</p>
+    <div class="callout warn" style="margin-top:12px">
+      <p>This test sits <strong>outside</strong> the corrected family above. Realised transit
+      time is an outcome measure, not something known at decision time, so it is not a
+      candidate predictor. It is shown because it explains <em>why</em> the late rates differ
+      by mode &mdash; and the answer is mostly the promise, not the operation.</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const S = {{ analytics.statistics | tojson }};
+const rows = S.results.slice().sort((a, b) => a.effect_size - b.effect_size);
+barH('c-effects', rows.map(r => r.factor), rows.map(r => r.effect_size), {
+  fmt: v => v.toFixed(3),
+  xtitle: "Effect size (Cramer's V / rank-biserial r)",
+  left: 185, height: 560,
+  color: rows.map(r => r.effect_size >= 0.20 ? PALETTE.red
+                     : (r.effect_size >= 0.10 ? PALETTE.amber : PALETTE.grey))
+});
+</script>
+{% endblock %}

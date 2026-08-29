@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+models/*.pkl
+models/*.json
+outputs/figures/*
+outputs/model_results/*
+outputs/exports/*
+data/processed/
+uploads/*
+!**/.gitkeep
+.pytest_cache/

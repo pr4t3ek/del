@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Risk Drivers &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set imp = analytics.importance %}
+
+<div class="page-head">
+  <h2>Delivery delay drivers</h2>
+  <p>What actually predicts late delivery, measured three ways, and what each finding means
+  for management.</p>
+</div>
+
+<section>
+  <h3>Top 10 delivery delay drivers</h3>
+  <div class="grid cols-2">
+    <div class="card">
+      <h4>Permutation importance</h4>
+      <p class="hint">Drop in held-out ROC-AUC when the feature is randomly shuffled &mdash;
+        the honest measure, computed on data the model never saw</p>
+      <div id="c-perm" class="chart tall"></div>
+    </div>
+    <div class="card">
+      <h4>Reading this chart</h4>
+      <p>Permutation importance is measured on the held-out set, so a feature that the model
+      merely memorised scores zero. It is preferred here over tree impurity importance, which
+      is biased toward high-cardinality features &mdash; and this dataset has several
+      (Order City has 3,597 levels before bucketing).</p>
+      <div class="callout" style="margin-top:12px">
+        {% set top = imp.permutation[0] %}
+        {% set second = imp.permutation[1] if imp.permutation|length > 1 else none %}
+        <p><strong>One driver, then nothing.</strong>
+        <span class="mono">{{ top.feature }}</span> costs
+        {{ '%.4f'|format(top.importance) }} AUC when shuffled.
+        {% if second %}The next feature,
+        <span class="mono">{{ second.feature }}</span>, costs
+        {{ '%.4f'|format(second.importance) }} &mdash;
+        {% if second.importance > 0 %}roughly
+        {{ '%.0f'|format(top.importance / second.importance) }}x smaller{% else %}
+        effectively nothing{% endif %}.{% endif %}</p>
+      </div>
+      <div class="callout warn" style="margin-top:12px">
+        <p><strong>Near-zero importance is a real result, not a missing one.</strong> Market,
+        region, country, category, customer segment, order size, discount and network load
+        genuinely carry no delay signal in this dataset. The
+        <a href="{{ url_for('statistics_page') }}">statistical tests</a> reach the same
+        conclusion independently: every one of those factors returns a negligible effect size
+        and fails to survive multiple-testing correction.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>Three views of importance</h3>
+  <div class="grid cols-3">
+    <div class="card"><h4>Permutation</h4>
+      <p class="hint">Held-out AUC drop</p>
+      <div id="c-perm2" class="chart short"></div></div>
+    <div class="card"><h4>Tree importance</h4>
+      <p class="hint">Impurity reduction; biased toward high-cardinality features</p>
+      <div id="c-tree" class="chart short"></div></div>
+    <div class="card"><h4>Logistic coefficients</h4>
+      <p class="hint">Absolute standardised coefficient magnitude</p>
+      <div id="c-coef" class="chart short"></div></div>
+  </div>
+  <p class="note" style="margin-top:12px">The three methods agree on the ranking, which is
+  reassuring: each has different biases, so convergence suggests the result is a property of
+  the data rather than of one algorithm.</p>
+</section>
+
+<section>
+  <h3>Business interpretation</h3>
+  {% for b in analytics.interpretation %}
+  <div class="card" style="margin-bottom:14px">
+    <div class="spread">
+      <h4 style="font-size:15px">{{ loop.index }}. {{ b.driver }}</h4>
+      <span class="badge {% if b.importance >= 0.01 %}bad{% elif b.importance >= 0.001 %}warn{% else %}mute{% endif %}">
+        importance {{ '%.4f'|format(b.importance) }}</span>
+    </div>
+    <div class="grid cols-3" style="margin-top:12px">
+      <div><div class="q" style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:4px">Statistical interpretation</div>
+        <p style="margin:0">{{ b.statistical }}</p></div>
+      <div><div class="q" style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:4px">Business interpretation</div>
+        <p style="margin:0">{{ b.business }}</p></div>
+      <div><div class="q" style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:4px">Action</div>
+        <p style="margin:0">{{ b.action }}</p></div>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<section>
+  <h3>Association, prediction, causation, scenario</h3>
+  <div class="grid cols-4">
+    <div class="card"><h4>Statistical association</h4>
+      <p>Shipping mode and late delivery move together in the historical record. Established
+      by the chi-square test (Cramer's V = {{ '%.3f'|format(analytics.statistics.results[0].effect_size) }}).</p></div>
+    <div class="card"><h4>Model prediction</h4>
+      <p>Given an order's mode and characteristics, the model outputs a probability of late
+      delivery. Validated on held-out data at
+      {{ '%.3f'|format(analytics.model_comparison[analytics.best_model].roc_auc) }} AUC.</p></div>
+    <div class="card"><h4>Causal claim &mdash; not made</h4>
+      <p>Mode assignment here is observational, not randomised. Nothing on this page claims
+      that switching a mode <em>causes</em> the historical difference in late rate.</p></div>
+    <div class="card"><h4>Decision scenario</h4>
+      <p>Substituting a mode and re-scoring produces a <em>model-implied scenario</em>: what
+      the model expects for an order with those characteristics, under stated assumptions.</p></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const IMP = {{ analytics.importance | tojson }};
+
+function impChart(id, rows, colour, n, height) {
+  const top = rows.slice(0, n).reverse();
+  barH(id, top.map(r => r.feature), top.map(r => r.importance),
+    { fmt: v => v.toFixed(4), xtitle: 'Importance', left: 175,
+      height: height, color: colour });
+}
+impChart('c-perm',  IMP.permutation, PALETTE.navy,   12, 480);
+impChart('c-perm2', IMP.permutation, PALETTE.navy,    8, 300);
+impChart('c-tree',  IMP.tree,        PALETTE.accent,  8, 300);
+impChart('c-coef',  IMP.coefficients, PALETTE.teal,   8, 300);
+</script>
+{% endblock %}

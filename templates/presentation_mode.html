@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Presentation Mode &middot; {{ app_title }}{% endblock %}
+{% block content %}
+{% set e = analytics.eda %}
+{% set d = analytics.decision %}
+{% set ab = analytics.ablation %}
+{% set s = analytics.statistics %}
+{% set m = analytics.model_comparison[analytics.best_model] %}
+
+<div class="page-head">
+  <h2>Presentation mode</h2>
+  <p>A guided walkthrough of the complete project. Each step states what is being analysed,
+  why that method, what it found, what it means, and what to do about it.</p>
+</div>
+
+{% macro slide(n, title, what, why, result, meaning, decision) %}
+<div class="slide">
+  <div class="step">Step {{ n }}</div>
+  <h3>{{ title }}</h3>
+  <div class="qa">
+    <div><div class="q">What are we analysing?</div><div class="a">{{ what }}</div></div>
+    <div><div class="q">Why this method?</div><div class="a">{{ why }}</div></div>
+    <div><div class="q">Result</div><div class="a">{{ result }}</div></div>
+    <div><div class="q">Business meaning</div><div class="a">{{ meaning }}</div></div>
+    <div><div class="q">Decision implication</div><div class="a">{{ decision }}</div></div>
+  </div>
+</div>
+{% endmacro %}
+
+{{ slide(1, 'Business problem',
+  'Which operational and external factors significantly predict delivery delays, and what is the optimal logistics decision under uncertainty to minimise total supply-chain cost?',
+  'A prediction alone does not change anything. The project is structured as prediction to decision to economic outcome: predict Late_delivery_risk, change Shipping Mode, measure against Order Profit Per Order and expected total cost.',
+  'A decision-support system rather than a classifier: risk scoring, counterfactual mode evaluation, an expected-cost engine and a policy recommendation with its stability region.',
+  'Management needs to know which orders are at risk, which lever moves them, and whether pulling that lever pays for itself.',
+  'Everything downstream is judged on whether it changes a shipping decision.') }}
+
+{{ slide(2, 'The data',
+  '%s DataCo order line items covering %s to %s, aggregated to %s orders.'|format('{:,}'.format(analytics.counts.n_rows_raw), e.date_min, e.date_max, '{:,}'.format(e.n_orders)),
+  'One row is an order line item, but the delivery outcome is recorded once per order. Testing on line items would count a three-line order three times toward one outcome, so analysis runs at order grain.',
+  'Four zero-signal columns and six exactly-duplicated column pairs removed; %s cancelled shipments held out of modelling; the target is near-balanced at %s%% late, so no resampling is applied.'|format('{:,}'.format(analytics.counts.n_cancelled_excluded), e.late_rate),
+  'Data quality decisions are visible and reversible rather than buried in a script.',
+  'Nothing is modelled until the grain and the exclusions are settled.') }}
+
+{{ slide(3, 'Delivery performance',
+  'Late-delivery rate across shipping mode, market, region, customer segment and product category.',
+  'Descriptive comparison first, so the model has something to be checked against.',
+  'Shipping mode separates sharply, from %s%% to %s%% late. Every other dimension sits within about a percentage point of the %s%% overall rate.'|format(d.promise_redesign.standard_class.late_rate * 100, d.promise_redesign.second_class.late_rate * 100, e.late_rate),
+  'The flat bars are the finding. Geography and product mix are not where the delay lives.',
+  'Attention belongs on mode and promise setting, not on regional service recovery.') }}
+
+{{ slide(4, 'Statistical significance',
+  '%s decision-time factors tested against Late_delivery_risk.'|format(s.n_tests),
+  "Chi-square with Cramer's V for categorical factors, Mann-Whitney U for numeric ones because the distributions are heavily skewed. Benjamini-Hochberg correction across the family, and effect sizes reported alongside p-values.",
+  '%s of %s factors survive correction, and %s reaches an effect size above 0.10: Shipping Mode, at %s.'|format(s.n_significant, s.n_tests, s.n_material, '%.3f'|format(s.results[0].effect_size)),
+  'At %s orders a hypothesis test detects differences far too small to act on. Effect size, not the p-value, is what separates a real driver from a statistical curiosity.'|format('{:,}'.format(s.n_orders)),
+  'Only one factor earns a place in the decision rule.') }}
+
+{{ slide(5, 'Model comparison',
+  'Logistic Regression, Decision Tree, Random Forest and Gradient Boosting on the leakage-screened feature set.',
+  'ROC-AUC rather than accuracy: the decision layer consumes ranked probabilities, and at a %s%% base rate accuracy rewards matching the base rate rather than separating the classes.'|format('%.0f'|format(100 * metadata.class_balance)),
+  'The four models land within 0.03 AUC of each other; %s is preferred at %s. A depth-capped tree matching gradient boosting tells us the relationship is close to a four-way lookup.'|format(analytics.best_model, '%.4f'|format(m.roc_auc)),
+  'There is no hidden non-linear structure for a more flexible model to find.',
+  'Model choice is not where the value is; the decision layer is.') }}
+
+{{ slide(6, 'Validation and leakage',
+  'Confusion matrix, ROC, precision-recall, calibration, and a feature ablation.',
+  'Three columns in this dataset reconstruct the target almost exactly. Excluding them is what separates a forecast from scoring the outcome against itself.',
+  'With Shipping Mode removed, all %s remaining factors together reach %s AUC against a chance level of 0.500. Brier score is %s and the calibration curve tracks the diagonal.'|format(ab.without_mode.n_features, '%.3f'|format(ab.without_mode.metrics.roc_auc), '%.4f'|format(analytics.calibration.brier)),
+  'The published ~99% accuracy results for this dataset come from leaving those columns in. This model earns a lower number honestly.',
+  'Calibrated probabilities are what make the expected-cost engine trustworthy.') }}
+
+{{ slide(7, 'Risk drivers',
+  'Permutation importance on held-out data, tree importance and logistic odds ratios.',
+  'Permutation importance measures the actual drop in held-out AUC, so it cannot reward memorisation. Three methods with different biases are compared.',
+  'Shipping Mode costs %s AUC when shuffled. No other feature is close.'|format('%.4f'|format(analytics.importance.permutation[0].importance)),
+  'A single controllable lever accounts for essentially all predictable delay risk.',
+  'The forecasting question collapses into the decision question.') }}
+
+{{ slide(8, 'Shipping-mode trade-off',
+  'Late rate, realised transit time and profit for each of the four modes.',
+  'Comparing the promised window against actual transit separates a service commitment from an operational capability.',
+  d.promise_redesign.finding if d.promise_redesign.available else '',
+  'Second Class is not a worse operation than Standard Class. It is the same operation carrying a tighter promise, and it misses that promise accordingly.',
+  'Re-setting the promise would cut the late rate on %s orders at no operational cost. That is the cheapest lever in the analysis.'|format('{:,}'.format(d.promise_redesign.orders_affected) if d.promise_redesign.available else 'affected')) }}
+
+{{ slide(9, 'Decision optimization',
+  'Expected total cost per order under each mode: freight, expected delay cost, holding and the value of speed.',
+  'The dataset has no freight-cost field, so cost cannot be measured and every monetary parameter is a stated, adjustable assumption.',
+  'The brief\'s formula of freight plus P(late) times penalty is degenerate here: Standard Class has both the lowest freight cost and the lowest late rate, so it absorbs %s%% of orders under any assumptions. Adding time-related terms restores a real trade-off.'|format('%.1f'|format(100 * d.degeneracy.dominant_share)),
+  'Optimising late rate alone would always return the slowest mode. Speed has value that a binary late/on-time measure cannot see.',
+  'The cost model must price time, or the optimisation answers itself before it starts.') }}
+
+{{ slide(10, 'Policy comparison and sensitivity',
+  'Five service-network policies, from a single mode for everything through to risk-based per-order assignment.',
+  'Because the question involves uncertainty, each recommendation is swept across its assumptions and reported as a stability region rather than a point estimate.',
+  '%s is best under current assumptions at $%s per order, %s%% below the single-mode baseline, with expected late rate at %s%%.'|format(d.policies.policies[0].policy, '%.2f'|format(d.policies.policies[0].avg_cost), '%.1f'|format(d.policies.policies[0].saving_pct), '%.1f'|format(100 * d.policies.policies[0].expected_late_rate)),
+  'The gain comes from matching mode to order value and risk, not from upgrading everything.',
+  'The sensitivity sweeps show exactly which assumptions would have to change to overturn the recommendation.') }}
+
+<div class="slide">
+  <div class="step">Step 11</div>
+  <h3>Live demonstration</h3>
+  <div class="qa">
+    <div><div class="q">Simulator</div><div class="a">Open the
+      <a href="{{ url_for('simulator_page') }}">simulator</a>, change the shipping mode and one
+      order characteristic, and watch the predicted risk, expected cost and recommended mode
+      update from the trained model.</div></div>
+    <div><div class="q">Promise redesign</div><div class="a">Tick "override the promise" to
+      model a change to the commitment rather than the operation &mdash; the lever from
+      step 8.</div></div>
+    <div><div class="q">Scenario switch</div><div class="a">On the
+      <a href="{{ url_for('decision_page') }}">decision page</a>, raise the value of delivery
+      speed and watch the optimal policy flip from Standard Class toward the faster modes.
+      This is the uncertainty in the business question made visible.</div></div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="step">Step 12</div>
+  <h3>Management recommendations</h3>
+  <div class="qa">
+    {% for a in summary.actions %}
+    <div>
+      <div class="q">{{ loop.index }}. {{ a.title }} &mdash; <span style="text-transform:none;letter-spacing:0">{{ a.basis }}</span></div>
+      <div class="a">{{ a.detail }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="callout assumption" style="margin-top:16px">
+    <p><strong>Standing caveat.</strong> Cost figures are modelled estimates under stated
+    assumptions, not observed values. Shipping-mode assignment is observational, so no causal
+    claim is made about switching modes.</p>
+  </div>
+</div>
+{% endblock %}

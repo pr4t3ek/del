@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Upload Dataset &middot; {{ app_title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>Upload DataCo dataset</h2>
+  <p>Upload a CSV to validate it against the data dictionary before running the analysis.</p>
+</div>
+
+<section>
+  <div class="grid sidebar">
+    <div class="card">
+      <h4>Select a file</h4>
+      <form method="post" enctype="multipart/form-data">
+        <label class="field"><span class="name">DataCo dataset (.csv)</span>
+          <input type="file" name="dataset" accept=".csv" required>
+        </label>
+        <button type="submit">Upload and validate</button>
+      </form>
+      <p class="note" style="margin-top:12px">The file is checked for the target, the decision
+      variable, economic fields, leakage columns and personal data, and reconciled against
+      <span class="mono">DescriptionDataCoSupplyChain.csv</span>. Uploading does not retrain
+      &mdash; run <span class="mono">python train_models.py</span> afterwards.</p>
+    </div>
+
+    <div>
+      {% if status %}
+      <div class="card">
+        <h4>Validation status</h4>
+        {% for s in status %}
+          <div class="stat-row"><span class="k">&#10003; {{ s }}</span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if errors %}
+      <div class="card" style="margin-top:16px">
+        <h4>Issues found</h4>
+        {% for e in errors %}
+          <div class="callout bad" style="margin-bottom:10px"><p>{{ e }}</p></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if not status and not errors %}
+      <div class="card">
+        <h4>Currently loaded dataset</h4>
+        {% if analytics %}
+          <div class="stat-row"><span class="k">Rows</span>
+            <span class="v">{{ '{:,}'.format(analytics.counts.n_rows_raw) }}</span></div>
+          <div class="stat-row"><span class="k">Orders</span>
+            <span class="v">{{ '{:,}'.format(analytics.counts.n_orders) }}</span></div>
+          <div class="stat-row"><span class="k">Target</span>
+            <span class="v mono">{{ metadata.target }}</span></div>
+          <div class="stat-row"><span class="k">Decision variable</span>
+            <span class="v mono">{{ metadata.decision_variable }}</span></div>
+          <div class="stat-row"><span class="k">Economic outcome</span>
+            <span class="v mono">{{ metadata.economic_target }}</span></div>
+          <div class="stat-row"><span class="k">Artifacts generated</span>
+            <span class="v">{{ metadata.generated_at[:16] }} UTC</span></div>
+        {% else %}
+          <p class="note">No analytics loaded. Run
+          <span class="mono">python train_models.py</span>.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

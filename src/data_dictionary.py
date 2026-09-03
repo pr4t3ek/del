@@ -12,8 +12,11 @@ file shipped in this repository:
 2. The CSV column is `shipping date (DateOrders)` with a lowercase "s", while the data
    dictionary - and most write-ups about this dataset - use `Shipping date (DateOrders)`.
    A literal lookup raises KeyError, so all column access goes through resolve().
-3. Both CSVs are tracked with Git LFS. Without `git lfs pull` they are ~130-byte pointer
-   files, and pandas fails with a confusing parser error instead of a useful message.
+3. Both CSVs are tracked with Git LFS. Without a successful `git lfs pull` they are either
+   ~130-byte pointer files - where pandas would fail with a confusing parser error - or
+   absent entirely. `git lfs pull` itself fails for reasons re-running it will not fix
+   (bandwidth quota, authentication, objects never pushed), so every failure here reports
+   where the loader looked and offers the fallbacks that do not need the git-lfs client.
 """
 
 from __future__ import annotations
@@ -27,6 +30,10 @@ import config
 
 ENCODING = "latin-1"
 LFS_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/v1"
+
+# GitHub resolves LFS content on the /raw/ path, so a browser download still works when the
+# git-lfs client cannot fetch it (a wrong credential, or no git-lfs installed at all).
+LFS_BROWSER_BASE = "https://github.com/pr4t3ek/del/raw/main/"
 
 
 class DatasetError(RuntimeError):
@@ -88,29 +95,98 @@ def find_file(filename: str, search_path=None) -> Path | None:
     return None
 
 
+def is_lfs_pointer(path: Path) -> bool:
+    """True when `path` holds a Git LFS pointer rather than the real file contents."""
+    try:
+        with open(path, "rb") as fh:
+            return fh.read(len(LFS_POINTER_PREFIX)) == LFS_POINTER_PREFIX
+    except OSError:                                       # pragma: no cover - defensive
+        return False
+
+
+def dataset_available(filename: str | None = None) -> bool:
+    """True when the real file - not an unfetched LFS pointer - is on disk somewhere."""
+    path = find_file(filename or config.DATASET_FILENAME)
+    return path is not None and not is_lfs_pointer(path)
+
+
+def search_report(filename: str, search_path=None) -> list[tuple[Path, str]]:
+    """Describe what each searched directory held, so error messages can show the trail."""
+    report = []
+    for directory in (search_path or config.DATA_SEARCH_PATH):
+        directory = Path(directory)
+        candidate = directory / filename
+        if not directory.is_dir():
+            status = "directory does not exist"
+        elif not candidate.is_file():
+            status = "no match"
+        elif is_lfs_pointer(candidate):
+            status = "Git LFS pointer, not fetched"
+        else:
+            status = "found"
+        report.append((directory, status))
+    return report
+
+
+def _recovery_steps(filename: str) -> str:
+    """The three ways to obtain a data file, shared by every dataset error message.
+
+    `git lfs pull` is first but cannot be the only answer: it fails for reasons the user
+    cannot fix by running it again - LFS bandwidth quota, authentication, or objects that
+    were never pushed - so the fallbacks that do not involve the git-lfs client matter.
+    """
+    return (
+        "How to fix, in order of preference:\n"
+        "\n"
+        "  1. Fetch it with Git LFS, from the repository root:\n"
+        "         git lfs install\n"
+        "         git lfs pull\n"
+        "\n"
+        "  2. If that fails (LFS bandwidth quota, authentication, or the objects were\n"
+        "     never pushed), download the file in a browser from\n"
+        f"         {LFS_BROWSER_BASE}{filename}\n"
+        f"     and save it as  {config.DATA_DIR / filename}\n"
+        "     Both CSVs come from the public DataCo Smart Supply Chain dataset, so\n"
+        '     searching Kaggle for "DataCo Smart Supply Chain for Big Data Analysis"\n'
+        "     is a further fallback.\n"
+        "\n"
+        "  3. Or start the application and upload it in the browser:\n"
+        "         python app.py     ->  http://127.0.0.1:5000/upload"
+    )
+
+
+def _missing_file_message(filename: str) -> str:
+    """Explain a file that is absent everywhere, including where the loader looked."""
+    lines = [f"{filename} was not found.", "", "Searched, in order:"]
+    for directory, status in search_report(filename):
+        lines.append(f"  {directory}  ->  {status}")
+    lines += [
+        "",
+        "This repository tracks *.csv with Git LFS, so a plain clone or a \"Download ZIP\"",
+        "leaves the file either absent or present only as a ~130-byte pointer.",
+        "",
+        _recovery_steps(filename),
+    ]
+    return "\n".join(lines)
+
+
 def _check_not_lfs_pointer(path: Path) -> None:
-    with open(path, "rb") as fh:
-        head = fh.read(len(LFS_POINTER_PREFIX))
-    if head == LFS_POINTER_PREFIX:
-        raise DatasetError(
-            f"'{path.name}' is a Git LFS pointer file, not the real data "
-            f"({path.stat().st_size} bytes).\n\n"
-            "Fetch the actual contents first:\n"
-            "    apt-get install -y git-lfs\n"
-            "    git lfs install\n"
-            "    git lfs pull"
-        )
+    if not is_lfs_pointer(path):
+        return
+    raise DatasetError(
+        f"'{path.name}' is a Git LFS pointer file, not the real data "
+        f"({path.stat().st_size} bytes).\n"
+        f"Found at: {path}\n"
+        "\n"
+        + _recovery_steps(path.name)
+    )
 
 
 def load_raw_dataset(path: Path | None = None) -> pd.DataFrame:
     """Load the DataCo dataset with the correct encoding, or raise DatasetError."""
     path = Path(path) if path else find_file(config.DATASET_FILENAME)
     if path is None:
-        raise DatasetError(
-            "Dataset not found.\n"
-            f"Please place {config.DATASET_FILENAME} inside the data/ folder "
-            "or upload it through the application."
-        )
+        raise DatasetError(_missing_file_message(config.DATASET_FILENAME))
     _check_not_lfs_pointer(path)
     try:
         return pd.read_csv(path, encoding=ENCODING, low_memory=False)

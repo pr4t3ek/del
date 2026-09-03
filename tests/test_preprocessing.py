@@ -10,9 +10,15 @@ from src import data_dictionary as dd
 from src import data_preprocessing as dp
 from src import statistics_tests as st
 
+# dataset_available() is False for an unfetched Git LFS pointer as well as for a missing
+# file. find_file() alone would return the pointer, and every test below would then error
+# on DatasetError rather than skipping - which is what a fresh clone looks like.
 pytestmark = pytest.mark.skipif(
-    dd.find_file(config.DATASET_FILENAME) is None,
-    reason="DataCo dataset not available (run: git lfs pull)",
+    not dd.dataset_available(),
+    reason=(
+        "DataCo dataset not available - run `git lfs pull`, or see the loader's error "
+        "message for the fallbacks when that fails"
+    ),
 )
 
 

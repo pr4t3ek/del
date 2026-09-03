@@ -165,6 +165,9 @@ table.compact tbody td { padding: 6px 10px; }
 .callout.assumption { border-left-color: var(--warn); background: var(--warn-sf); }
 .callout + .callout { margin-top: 10px; }
 .callout p { margin: 0 0 8px; } .callout p:last-child { margin: 0; }
+/* Loader errors (dataset not found, LFS pointer) are multi-line plain text whose
+   indented command blocks are the point - keep the line breaks. */
+.callout p.pre-text { white-space: pre-wrap; font-family: var(--mono); font-size: 12.5px; }
 
 /* ---------- Forms ---------- */
 label.field { display: block; margin-bottom: 13px; }

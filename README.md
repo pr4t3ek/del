@@ -231,16 +231,28 @@ Both CSVs are stored with Git LFS. Without this step they are ~130-byte pointer 
 application will tell you so rather than failing obscurely:
 
 ```bash
-# macOS: brew install git-lfs   |   Debian/Ubuntu: apt-get install -y git-lfs
+# Windows:       winget install GitHub.GitLFS   (Git for Windows often bundles it already -
+#                check with: git lfs version)
+# macOS:         brew install git-lfs
+# Debian/Ubuntu: apt-get install -y git-lfs
 git lfs install
 git lfs pull
 ```
 
+Install git-lfs *before* cloning and the CSVs come down as part of `git clone`, with no second
+step needed.
+
 The loader searches `uploads/`, then `data/`, then the repository root, so the LFS-tracked files
 work where they are — no second 96 MB copy is needed.
 
-**If `git lfs pull` fails** — LFS bandwidth quota, authentication, or objects that were never
-pushed — re-running it will not help. Two fallbacks that do not use the git-lfs client:
+**If `git lfs pull` fails with `'origin' does not appear to be a git repository`**, the folder is
+not a clone — it was made with `git init`, or by copying files in. `git lfs pull` needs a remote
+to pull from. Check with `git remote -v`; if it prints nothing, clone the repository properly
+rather than adding the data by hand.
+
+**If `git lfs pull` fails for any other reason** — LFS bandwidth quota, authentication, or objects
+that were never pushed — re-running it will not help. Two fallbacks that do not use the git-lfs
+client:
 
 - Download the file in a browser from
   <https://github.com/pr4t3ek/del/raw/main/DataCoSupplyChainDataset.csv> (GitHub resolves LFS
@@ -324,6 +336,11 @@ follow [Fetch the data](#fetch-the-data-required).
 **`'DataCoSupplyChainDataset.csv' is a Git LFS pointer file, not the real data (133 bytes).`**
 The clone brought down the pointer but not the contents. Run `git lfs install && git lfs pull`, or
 use the fallbacks in [Fetch the data](#fetch-the-data-required) if that command fails.
+
+**`fatal: 'origin' does not appear to be a git repository`** (from `git fetch` or `git lfs pull`)
+The folder is not a clone of this repository — `git remote -v` will print nothing. A `git init`
+directory or a copied set of files can never fetch the LFS content. Clone it properly:
+`git clone https://github.com/pr4t3ek/del.git`.
 
 **`Model not found. Please run: python train_models.py`**
 The dataset is fine; the app has no artifacts yet. Run the training step once.

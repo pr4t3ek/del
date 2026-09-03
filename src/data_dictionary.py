@@ -141,6 +141,8 @@ def _recovery_steps(filename: str) -> str:
         "  1. Fetch it with Git LFS, from the repository root:\n"
         "         git lfs install\n"
         "         git lfs pull\n"
+        "     This needs a real clone. If `git remote -v` prints nothing, this folder\n"
+        "     was never cloned from GitHub and can never fetch the data - re-clone it.\n"
         "\n"
         "  2. If that fails (LFS bandwidth quota, authentication, or the objects were\n"
         "     never pushed), download the file in a browser from\n"

@@ -239,6 +239,19 @@ git lfs pull
 The loader searches `uploads/`, then `data/`, then the repository root, so the LFS-tracked files
 work where they are — no second 96 MB copy is needed.
 
+**If `git lfs pull` fails** — LFS bandwidth quota, authentication, or objects that were never
+pushed — re-running it will not help. Two fallbacks that do not use the git-lfs client:
+
+- Download the file in a browser from
+  <https://github.com/pr4t3ek/del/raw/main/DataCoSupplyChainDataset.csv> (GitHub resolves LFS
+  content on the `/raw/` path) and save it into `data/`. Do the same for
+  `DescriptionDataCoSupplyChain.csv` if the dictionary is missing too.
+- Or start the app and upload it: `python app.py`, then <http://127.0.0.1:5000/upload>. That page
+  works before anything has been trained.
+
+Both files are also part of the public DataCo Smart Supply Chain dataset, published on Kaggle as
+*DataCo Smart Supply Chain for Big Data Analysis*.
+
 ## Train
 
 ```bash
@@ -294,6 +307,27 @@ python -m pytest tests/ -q
 Covers the leakage guard, the cost model and its degeneracy property, order aggregation
 invariants, and the group split.
 
+The dataset-backed tests in `tests/test_preprocessing.py` skip — rather than fail — when the CSV
+is missing or is still an unfetched LFS pointer, so a fresh clone reports `21 passed, 19 skipped`.
+
+## Troubleshooting
+
+Every dataset error prints where the loader looked and how to fix it. The two you are likely to
+see:
+
+**`DataCoSupplyChainDataset.csv was not found.`**
+The CSV is in none of `uploads/`, `data/`, or the repository root — the message lists all three as
+absolute paths, so check first that you are running from the project directory
+(`C:\Users\you\...\Del`, not a parent). If the paths are right, the file simply is not there:
+follow [Fetch the data](#fetch-the-data-required).
+
+**`'DataCoSupplyChainDataset.csv' is a Git LFS pointer file, not the real data (133 bytes).`**
+The clone brought down the pointer but not the contents. Run `git lfs install && git lfs pull`, or
+use the fallbacks in [Fetch the data](#fetch-the-data-required) if that command fails.
+
+**`Model not found. Please run: python train_models.py`**
+The dataset is fine; the app has no artifacts yet. Run the training step once.
+
 ---
 
 ## Project structure
@@ -325,6 +359,8 @@ templates/              16 pages (base, index, data, eda, statistics, classifica
 static/css/style.css    Dashboard styling
 static/js/              dashboard.js, decision.js, simulator.js, plotly.min.js (vendored)
 tests/                  pytest suite
+data/                   Optional drop-in location for the CSVs (searched second)
+uploads/                Uploaded datasets (searched first, so they override)
 models/  outputs/       Generated artifacts
 ```
 

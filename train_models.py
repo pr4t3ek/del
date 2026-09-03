@@ -76,7 +76,7 @@ def to_jsonable(obj):
 
 def main() -> int:
     started = time.time()
-    for directory in (config.MODEL_DIR, config.RESULT_DIR,
+    for directory in (config.DATA_DIR, config.MODEL_DIR, config.RESULT_DIR,
                       config.FIGURE_DIR, config.EXPORT_DIR):
         directory.mkdir(parents=True, exist_ok=True)
 
